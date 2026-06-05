@@ -9,6 +9,7 @@ not contain embedded inference firmware and does not make safety decisions.
 
 ```text
 models/
+  architectures/
   common/
   anomaly_detector/
   router/
@@ -81,3 +82,24 @@ model_card.json
 
 These are offline artifacts. A later export step should convert validated models
 to compact C or TFLite Micro assets for ESP32-S3.
+
+## Architecture Specs
+
+Explicit PRD-based architecture specs are in:
+
+```text
+ai_ml/models/architectures/model_architectures.py
+```
+
+Generate a full JSON summary:
+
+```powershell
+python ai_ml/models/architectures/model_architectures.py --summary
+```
+
+The current architecture target is:
+
+- Embedded router: small MLP, Dense 16, Dense 8, softmax over experts
+- Embedded experts: small MLP, Dense 16, Dense 8, softmax over fault classes
+- Embedded anomaly detector: tiny autoencoder candidate, currently baseline-trained with IsolationForest
+- Pi unknown-fault analyzer: temporal sequence embedding plus clustering, similarity search, and root-cause ranking

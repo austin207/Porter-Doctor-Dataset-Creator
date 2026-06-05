@@ -1,0 +1,14 @@
+{
+  "note": "Generated-style architecture source of truth is ai_ml/models/architectures/model_architectures.py. Run it with --summary to regenerate a full JSON summary.",
+  "embedded_core": {
+    "anomaly_detector": "tiny_autoencoder or one-class model",
+    "router": "small MLP, Dense 16, Dense 8, softmax over experts",
+    "experts": "small MLP, Dense 16, Dense 8, softmax over fault classes"
+  },
+  "pi_analyzer": {
+    "sequence_embedding": "temporal autoencoder candidate",
+    "clustering": "DBSCAN, HDBSCAN, or K-Means",
+    "similarity_search": "embedding nearest-neighbor search",
+    "root_cause_ranker": "ranked candidates from sequence evidence and similar confirmed events"
+  }
+}

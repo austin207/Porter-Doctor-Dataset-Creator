@@ -1,0 +1,527 @@
+{
+  "anomaly_detector": {
+    "deployment_target": "esp32_s3",
+    "hidden_layers": [
+      {
+        "activation": "relu",
+        "units": 16
+      },
+      {
+        "activation": "relu",
+        "units": 8
+      },
+      {
+        "activation": "relu",
+        "units": 16
+      }
+    ],
+    "input_dim": 20,
+    "input_features": [
+      "rpm_error_left",
+      "rpm_error_right",
+      "rpm_mean_left",
+      "rpm_mean_right",
+      "current_mean_left",
+      "current_mean_right",
+      "current_peak_left",
+      "current_peak_right",
+      "voltage_mean",
+      "voltage_minimum",
+      "voltage_drop",
+      "temperature_mean",
+      "heartbeat_interval_ms",
+      "packet_loss_rate",
+      "telemetry_stale_ratio",
+      "left_right_rpm_difference",
+      "left_right_current_difference",
+      "vibration_rms",
+      "vibration_peak",
+      "driver_fault_count"
+    ],
+    "max_latency_ms": 50,
+    "model_family": "tiny_autoencoder",
+    "name": "anomaly_detector",
+    "notes": [
+      "PRD allows small autoencoder or one-class model.",
+      "Unknown fault rule starts as anomaly_score > 0.80 and max_expert_confidence < 0.55.",
+      "For current baseline training code, IsolationForest is used until neural export is added."
+    ],
+    "output_activation": "linear",
+    "output_classes": [
+      "reconstruction_error"
+    ],
+    "output_dim": 1,
+    "purpose": "Always-on abnormal-behavior detector trained primarily on healthy telemetry windows.",
+    "quantization": "int8_candidate"
+  },
+  "encoder_expert": {
+    "deployment_target": "esp32_s3",
+    "hidden_layers": [
+      {
+        "activation": "relu",
+        "units": 16
+      },
+      {
+        "activation": "relu",
+        "units": 8
+      }
+    ],
+    "input_dim": 15,
+    "input_features": [
+      "encoder_count_left_delta",
+      "encoder_count_right_delta",
+      "calculated_rpm_left",
+      "calculated_rpm_right",
+      "motor_current_left_mean",
+      "motor_current_right_mean",
+      "vibration_rms",
+      "pwm_left_mean",
+      "pwm_right_mean",
+      "direction_command_left",
+      "direction_command_right",
+      "pulse_timing_variance_left",
+      "pulse_timing_variance_right",
+      "rpm_encoder_motor_mismatch_left",
+      "rpm_encoder_motor_mismatch_right"
+    ],
+    "max_latency_ms": 50,
+    "model_family": "small_mlp",
+    "name": "encoder_expert",
+    "notes": [
+      "PRD suggested expert model: input 10-25 features, Dense 16, Dense 8, output fault classes.",
+      "Can be replaced by decision tree or random forest converted to C if validation favours it.",
+      "ML output may request bounded actions only; deterministic safety supervisor authorizes actions."
+    ],
+    "output_activation": "softmax",
+    "output_classes": [
+      "healthy",
+      "encoder_disconnected",
+      "encoder_signal_noise",
+      "incorrect_pulse_count",
+      "direction_mismatch",
+      "intermittent_encoder_failure"
+    ],
+    "output_dim": 6,
+    "purpose": "Diagnose encoder pulse, direction, signal-noise, and mismatch faults.",
+    "quantization": "int8_candidate"
+  },
+  "esp32_expert": {
+    "deployment_target": "esp32_s3",
+    "hidden_layers": [
+      {
+        "activation": "relu",
+        "units": 16
+      },
+      {
+        "activation": "relu",
+        "units": 8
+      }
+    ],
+    "input_dim": 12,
+    "input_features": [
+      "heartbeat_interval_ms",
+      "heartbeat_jitter_ms",
+      "heartbeat_missed_count",
+      "reset_reason_id",
+      "watchdog_count",
+      "packet_error_count",
+      "packet_loss_rate",
+      "task_loop_time_mean_ms",
+      "task_loop_time_peak_ms",
+      "control_loop_jitter_ms",
+      "uart_rx_errors",
+      "telemetry_age_ms"
+    ],
+    "max_latency_ms": 50,
+    "model_family": "small_mlp",
+    "name": "esp32_expert",
+    "notes": [
+      "PRD suggested expert model: input 10-25 features, Dense 16, Dense 8, output fault classes.",
+      "Can be replaced by decision tree or random forest converted to C if validation favours it.",
+      "ML output may request bounded actions only; deterministic safety supervisor authorizes actions."
+    ],
+    "output_activation": "softmax",
+    "output_classes": [
+      "healthy",
+      "heartbeat_lost",
+      "packet_loss",
+      "watchdog_reset",
+      "brownout_reset",
+      "task_overrun",
+      "firmware_freeze",
+      "communication_failure",
+      "repeated_reset_loop"
+    ],
+    "output_dim": 9,
+    "purpose": "Diagnose main ESP32 firmware, reset, heartbeat, task timing, and communication faults.",
+    "quantization": "int8_candidate"
+  },
+  "lighting_expert": {
+    "deployment_target": "esp32_s3",
+    "hidden_layers": [
+      {
+        "activation": "relu",
+        "units": 16
+      },
+      {
+        "activation": "relu",
+        "units": 8
+      }
+    ],
+    "input_dim": 11,
+    "input_features": [
+      "brightness_command_mean",
+      "light_current_mean",
+      "light_current_peak",
+      "light_voltage_mean",
+      "light_voltage_minimum",
+      "light_sensor_lux_mean",
+      "brightness_error",
+      "light_driver_temp_mean",
+      "light_driver_temp_rise_rate",
+      "light_fault_gpio",
+      "telemetry_age_ms"
+    ],
+    "max_latency_ms": 50,
+    "model_family": "small_mlp",
+    "name": "lighting_expert",
+    "notes": [
+      "PRD suggested expert model: input 10-25 features, Dense 16, Dense 8, output fault classes.",
+      "Can be replaced by decision tree or random forest converted to C if validation favours it.",
+      "ML output may request bounded actions only; deterministic safety supervisor authorizes actions."
+    ],
+    "output_activation": "softmax",
+    "output_classes": [
+      "healthy",
+      "led_failure",
+      "light_driver_failure",
+      "open_circuit_wiring_fault",
+      "short_circuit_suspected",
+      "brightness_mismatch",
+      "lighting_overcurrent",
+      "overtemperature"
+    ],
+    "output_dim": 8,
+    "purpose": "Diagnose LED, wiring, driver, short/open circuit, brightness mismatch, and thermal faults.",
+    "quantization": "int8_candidate"
+  },
+  "motor_driver_expert": {
+    "deployment_target": "esp32_s3",
+    "hidden_layers": [
+      {
+        "activation": "relu",
+        "units": 16
+      },
+      {
+        "activation": "relu",
+        "units": 8
+      }
+    ],
+    "input_dim": 18,
+    "input_features": [
+      "pwm_left_mean",
+      "pwm_right_mean",
+      "current_left_mean",
+      "current_right_mean",
+      "current_left_peak",
+      "current_right_peak",
+      "battery_voltage_mean",
+      "battery_voltage_minimum",
+      "driver_temp_left_mean",
+      "driver_temp_right_mean",
+      "driver_temp_rise_rate_left",
+      "driver_temp_rise_rate_right",
+      "driver_fault_left",
+      "driver_fault_right",
+      "driver_enable_left",
+      "driver_enable_right",
+      "rpm_response_left",
+      "rpm_response_right"
+    ],
+    "max_latency_ms": 50,
+    "model_family": "small_mlp",
+    "name": "motor_driver_expert",
+    "notes": [
+      "PRD suggested expert model: input 10-25 features, Dense 16, Dense 8, output fault classes.",
+      "Can be replaced by decision tree or random forest converted to C if validation favours it.",
+      "ML output may request bounded actions only; deterministic safety supervisor authorizes actions."
+    ],
+    "output_activation": "softmax",
+    "output_classes": [
+      "healthy",
+      "driver_overcurrent",
+      "driver_overtemperature",
+      "driver_output_failure",
+      "partial_power_stage_failure",
+      "driver_disabled",
+      "undervoltage_lockout",
+      "short_circuit_suspected"
+    ],
+    "output_dim": 8,
+    "purpose": "Diagnose motor-driver power stage, thermal, enable, and undervoltage faults.",
+    "quantization": "int8_candidate"
+  },
+  "motor_expert": {
+    "deployment_target": "esp32_s3",
+    "hidden_layers": [
+      {
+        "activation": "relu",
+        "units": 16
+      },
+      {
+        "activation": "relu",
+        "units": 8
+      }
+    ],
+    "input_dim": 19,
+    "input_features": [
+      "pwm_left_mean",
+      "pwm_right_mean",
+      "rpm_left_mean",
+      "rpm_right_mean",
+      "rpm_error_left",
+      "rpm_error_right",
+      "rpm_variance_left",
+      "rpm_variance_right",
+      "current_left_mean",
+      "current_right_mean",
+      "current_left_peak",
+      "current_right_peak",
+      "motor_temp_left_mean",
+      "motor_temp_right_mean",
+      "vibration_rms",
+      "vibration_peak",
+      "left_right_rpm_difference",
+      "left_right_current_difference",
+      "telemetry_age_ms"
+    ],
+    "max_latency_ms": 50,
+    "model_family": "small_mlp",
+    "name": "motor_expert",
+    "notes": [
+      "PRD suggested expert model: input 10-25 features, Dense 16, Dense 8, output fault classes.",
+      "Can be replaced by decision tree or random forest converted to C if validation favours it.",
+      "ML output may request bounded actions only; deterministic safety supervisor authorizes actions."
+    ],
+    "output_activation": "softmax",
+    "output_classes": [
+      "healthy",
+      "mechanical_stall",
+      "excessive_load",
+      "motor_disconnected",
+      "abnormal_vibration",
+      "bearing_degradation",
+      "reduced_motor_efficiency",
+      "imbalance"
+    ],
+    "output_dim": 8,
+    "purpose": "Diagnose mechanical motor-side faults from PWM, RPM, current, temperature, load, and vibration.",
+    "quantization": "int8_candidate"
+  },
+  "pi_expert": {
+    "deployment_target": "esp32_s3",
+    "hidden_layers": [
+      {
+        "activation": "relu",
+        "units": 16
+      },
+      {
+        "activation": "relu",
+        "units": 8
+      }
+    ],
+    "input_dim": 12,
+    "input_features": [
+      "pi_heartbeat_interval_ms",
+      "pi_heartbeat_missed_count",
+      "cpu_usage_mean",
+      "cpu_usage_peak",
+      "memory_usage_mean",
+      "memory_usage_peak",
+      "cpu_temperature_mean",
+      "cpu_temperature_peak",
+      "disk_usage",
+      "main_process_alive",
+      "ros_node_failure_count",
+      "command_latency_ms"
+    ],
+    "max_latency_ms": 50,
+    "model_family": "small_mlp",
+    "name": "pi_expert",
+    "notes": [
+      "PRD suggested expert model: input 10-25 features, Dense 16, Dense 8, output fault classes.",
+      "Can be replaced by decision tree or random forest converted to C if validation favours it.",
+      "ML output may request bounded actions only; deterministic safety supervisor authorizes actions."
+    ],
+    "output_activation": "softmax",
+    "output_classes": [
+      "healthy",
+      "pi_heartbeat_lost",
+      "process_crash",
+      "cpu_overload",
+      "memory_exhaustion",
+      "thermal_throttling",
+      "ros_node_failure",
+      "command_pipeline_delay"
+    ],
+    "output_dim": 8,
+    "purpose": "Diagnose Raspberry Pi or Jetson health faults from heartbeat and system metrics.",
+    "quantization": "int8_candidate"
+  },
+  "power_expert": {
+    "deployment_target": "esp32_s3",
+    "hidden_layers": [
+      {
+        "activation": "relu",
+        "units": 16
+      },
+      {
+        "activation": "relu",
+        "units": 8
+      }
+    ],
+    "input_dim": 12,
+    "input_features": [
+      "battery_voltage_mean",
+      "battery_voltage_minimum",
+      "battery_voltage_drop",
+      "battery_current_mean",
+      "battery_current_peak",
+      "battery_current_variance",
+      "battery_power_mean",
+      "rail_5v_mean",
+      "rail_3v3_mean",
+      "load_state",
+      "temperature_mean",
+      "voltage_sag_duration_ms"
+    ],
+    "max_latency_ms": 50,
+    "model_family": "small_mlp",
+    "name": "power_expert",
+    "notes": [
+      "PRD suggested expert model: input 10-25 features, Dense 16, Dense 8, output fault classes.",
+      "Can be replaced by decision tree or random forest converted to C if validation favours it.",
+      "ML output may request bounded actions only; deterministic safety supervisor authorizes actions."
+    ],
+    "output_activation": "softmax",
+    "output_classes": [
+      "healthy",
+      "battery_voltage_sag",
+      "battery_undervoltage",
+      "loose_power_connection",
+      "regulator_instability",
+      "excessive_system_load",
+      "power_interruption"
+    ],
+    "output_dim": 7,
+    "purpose": "Diagnose battery, voltage sag, undervoltage, loose connection, regulator, and load faults.",
+    "quantization": "int8_candidate"
+  },
+  "router": {
+    "deployment_target": "esp32_s3",
+    "hidden_layers": [
+      {
+        "activation": "relu",
+        "units": 16
+      },
+      {
+        "activation": "relu",
+        "units": 8
+      }
+    ],
+    "input_dim": 16,
+    "input_features": [
+      "power_score",
+      "motor_score",
+      "driver_score",
+      "esp32_score",
+      "lighting_score",
+      "rpm_error_left",
+      "rpm_error_right",
+      "voltage_drop",
+      "current_peak_left",
+      "current_peak_right",
+      "heartbeat_interval_ms",
+      "packet_loss_rate",
+      "driver_fault_count",
+      "light_fault_gpio",
+      "telemetry_stale_ratio",
+      "severity"
+    ],
+    "max_latency_ms": 50,
+    "model_family": "small_mlp",
+    "name": "moe_router",
+    "notes": [
+      "PRD suggested router model: input 30-50 features, Dense 16, Dense 8, output expert probabilities.",
+      "Current initial feature list is smaller because only first logger features exist.",
+      "Runtime must activate top-2 or top-3 experts, not only top-1."
+    ],
+    "output_activation": "softmax",
+    "output_classes": [
+      "power_expert",
+      "motor_expert",
+      "motor_driver_expert",
+      "esp32_expert",
+      "encoder_expert",
+      "lighting_expert",
+      "unknown_fault"
+    ],
+    "output_dim": 7,
+    "purpose": "Route each telemetry window to top-2 or top-3 subsystem experts.",
+    "quantization": "int8_candidate"
+  },
+  "unknown_fault_sequence_analyzer": {
+    "deployment_target": "raspberry_pi_or_jetson",
+    "hidden_layers": [
+      {
+        "activation": "relu",
+        "units": 64
+      },
+      {
+        "activation": "relu",
+        "units": 32
+      },
+      {
+        "activation": "linear_embedding",
+        "units": 16
+      },
+      {
+        "activation": "relu",
+        "units": 32
+      },
+      {
+        "activation": "relu",
+        "units": 64
+      }
+    ],
+    "input_dim": 7,
+    "input_features": [
+      "pre_fault_30s_multisignal_sequence",
+      "post_fault_10s_multisignal_sequence",
+      "robot_operating_mode",
+      "router_probabilities",
+      "expert_confidences",
+      "executed_action",
+      "historical_fault_context"
+    ],
+    "max_latency_ms": 1000,
+    "model_family": "temporal_autoencoder_plus_clustering",
+    "name": "unknown_fault_sequence_analyzer",
+    "notes": [
+      "PRD suggests 1D CNN autoencoder, LSTM autoencoder, or temporal convolutional autoencoder.",
+      "Clustering can use DBSCAN, HDBSCAN, or K-Means.",
+      "Similarity search should retrieve confirmed historical events.",
+      "This is Pi/Jeston-side analysis, not ESP32 real-time inference."
+    ],
+    "output_activation": "mixed",
+    "output_classes": [
+      "sequence_embedding",
+      "reconstruction_error",
+      "cluster_id",
+      "ranked_root_cause_candidates"
+    ],
+    "output_dim": 4,
+    "purpose": "Embed unknown-fault sequences for clustering, similarity search, and root-cause ranking.",
+    "quantization": "not_required_for_pi"
+  }
+}
