@@ -1,0 +1,7 @@
+run_id=lighting_overcurrent_run_005
+expert_name=lighting_expert
+robot_id=porter_dev
+fault_label=lighting_overcurrent
+sample_rows=18
+source=deterministic_sample_generator
+safety_note=simulated telemetry only; no hardware fault generation

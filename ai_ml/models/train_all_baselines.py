@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""Train all baseline models that have sample data available."""
+"""Train all TensorFlow models that have sample data available."""
 
 from __future__ import annotations
 
 from pathlib import Path
 
-from common.training_utils import train_anomaly_detector, train_classifier
+from common.training_utils import train_tensorflow_anomaly_detector, train_tensorflow_classifier
 
 
 ROOT = Path(__file__).resolve().parent
@@ -21,9 +21,9 @@ CLASSIFIER_CONFIGS = [
 
 def main() -> int:
     for config in CLASSIFIER_CONFIGS:
-        train_classifier(config)
-    train_anomaly_detector(ROOT / "anomaly_detector" / "config.json")
-    print("baseline training complete")
+        train_tensorflow_classifier(config)
+    train_tensorflow_anomaly_detector(ROOT / "anomaly_detector" / "config.json")
+    print("TensorFlow training complete")
     return 0
 
 

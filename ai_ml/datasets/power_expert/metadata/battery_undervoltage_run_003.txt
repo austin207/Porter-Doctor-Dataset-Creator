@@ -1,0 +1,7 @@
+run_id=battery_undervoltage_run_003
+expert_name=power_expert
+robot_id=porter_dev
+fault_label=battery_undervoltage
+sample_rows=18
+source=deterministic_sample_generator
+safety_note=simulated telemetry only; no hardware fault generation

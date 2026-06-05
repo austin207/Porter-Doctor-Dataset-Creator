@@ -13,8 +13,10 @@ out/
 **/artifacts/
 
 # Python/cache noise
+.venv/
 __pycache__/
 *.pyc
+ai_ml/models/tuning_summary.json
 
 # Editor/OS noise
 .vscode/

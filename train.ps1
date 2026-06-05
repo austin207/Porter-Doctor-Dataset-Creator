@@ -8,6 +8,7 @@ param(
 $ErrorActionPreference = "Stop"
 $RepoRoot = Split-Path -Parent $MyInvocation.MyCommand.Path
 Set-Location $RepoRoot
+$env:TF_CPP_MIN_LOG_LEVEL = "2"
 
 $UserSite = (& $Python -c "import site; print(site.getusersitepackages())").Trim()
 if ($LASTEXITCODE -eq 0 -and $UserSite) {
@@ -32,13 +33,14 @@ function Invoke-Step {
 }
 
 if ($InstallDeps) {
-    Invoke-Step "Install training dependencies" @("-m", "pip", "install", "-r", "ai_ml/models/requirements.txt")
+    Invoke-Step "Install training dependencies" @("-m", "pip", "install", "-r", "requirements.txt")
 }
 
-Invoke-Step "Check training dependencies" @("-c", "import pandas, sklearn, joblib, numpy")
+Invoke-Step "Check training dependencies" @("-c", "import pandas, sklearn, joblib, numpy, yaml, tensorflow")
 
 if (-not $SkipPrepare) {
     Invoke-Step "Merge raw dataset runs" @("ai_ml/dataset_tools/merge_raw_runs.py", "--expert", "all")
+    Invoke-Step "Merge per-expert raw dataset runs" @("ai_ml/dataset_tools/merge_raw_runs.py", "--per-expert")
     Invoke-Step "Build router dataset" @("ai_ml/router_dataset_builder/build_router_dataset.py")
 }
 
@@ -65,6 +67,7 @@ $Jobs = foreach ($Item in $TrainJobs) {
         param($RepoRoot, $Python, $ScriptPath, $PythonPath)
 
         Set-Location $RepoRoot
+        $env:TF_CPP_MIN_LOG_LEVEL = "2"
         $Output = & $Python $ScriptPath 2>&1 | Out-String
         [PSCustomObject]@{
             ScriptPath = $ScriptPath
@@ -105,4 +108,4 @@ if ($Failed.Count -gt 0) {
 
 Write-Host ""
 Write-Host "Training complete. Artifacts are under ai_ml/models/<model_name>/artifacts/."
-Write-Host "Current artifacts are baseline .joblib models, not TensorFlow Lite files."
+Write-Host "Current artifacts include model_float32.keras, model_float32.tflite, and model_int8.tflite."

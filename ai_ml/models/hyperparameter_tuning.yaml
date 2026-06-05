@@ -1,0 +1,65 @@
+# Hyperparameter search spaces for TensorFlow/Keras models.
+
+defaults:
+  search:
+    method: grid
+    max_combinations: 18
+    metric: val_fault_output_accuracy
+
+classifier_models:
+  power_expert:
+    config: ai_ml/models/power_expert/config.json
+    params:
+      hidden_layers: [[16, 8], [32, 16], [48, 24]]
+      learning_rate: [0.001, 0.0005]
+      batch_size: [8, 16]
+      epochs: [80]
+
+  motor_expert:
+    config: ai_ml/models/motor_expert/config.json
+    params:
+      hidden_layers: [[16, 8], [32, 16], [48, 24]]
+      learning_rate: [0.001, 0.0005]
+      batch_size: [8, 16]
+      epochs: [80]
+
+  motor_driver_expert:
+    config: ai_ml/models/motor_driver_expert/config.json
+    params:
+      hidden_layers: [[16, 8], [32, 16], [48, 24]]
+      learning_rate: [0.001, 0.0005]
+      batch_size: [8, 16]
+      epochs: [80]
+
+  esp32_expert:
+    config: ai_ml/models/esp32_expert/config.json
+    params:
+      hidden_layers: [[12, 6], [24, 12], [32, 16]]
+      learning_rate: [0.001, 0.0005]
+      batch_size: [8, 16]
+      epochs: [80]
+
+  lighting_expert:
+    config: ai_ml/models/lighting_expert/config.json
+    params:
+      hidden_layers: [[8, 4], [16, 8], [24, 12]]
+      learning_rate: [0.001, 0.0005]
+      batch_size: [8, 16]
+      epochs: [80]
+
+  router:
+    config: ai_ml/models/router/config.json
+    params:
+      hidden_layers: [[16, 8], [32, 16], [48, 24]]
+      learning_rate: [0.001, 0.0005]
+      batch_size: [8, 16]
+      epochs: [80]
+
+anomaly_models:
+  anomaly_detector:
+    config: ai_ml/models/anomaly_detector/config.json
+    params:
+      hidden_layers: [[16, 8, 16], [24, 8, 24], [32, 12, 32]]
+      learning_rate: [0.001, 0.0005]
+      batch_size: [8, 16]
+      epochs: [80]

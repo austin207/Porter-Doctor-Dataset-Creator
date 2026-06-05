@@ -1,0 +1,7 @@
+run_id=driver_fault_pin_active_run_005
+expert_name=motor_driver_expert
+robot_id=porter_dev
+fault_label=driver_fault_pin_active
+sample_rows=18
+source=deterministic_sample_generator
+safety_note=simulated telemetry only; no hardware fault generation

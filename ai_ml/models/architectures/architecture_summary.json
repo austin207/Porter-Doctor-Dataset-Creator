@@ -1,5 +1,6 @@
 {
   "anomaly_detector": {
+    "deployment_format": "keras_float32_plus_tflite_int8",
     "deployment_target": "esp32_s3",
     "hidden_layers": [
       {
@@ -44,7 +45,7 @@
     "notes": [
       "PRD allows small autoencoder or one-class model.",
       "Unknown fault rule starts as anomaly_score > 0.80 and max_expert_confidence < 0.55.",
-      "For current baseline training code, IsolationForest is used until neural export is added."
+      "Current implementation trains a TensorFlow/Keras autoencoder and exports float32 and int8 TFLite artifacts."
     ],
     "output_activation": "linear",
     "output_classes": [
@@ -52,9 +53,11 @@
     ],
     "output_dim": 1,
     "purpose": "Always-on abnormal-behavior detector trained primarily on healthy telemetry windows.",
-    "quantization": "int8_candidate"
+    "quantization": "int8_candidate",
+    "training_framework": "tensorflow_keras"
   },
   "encoder_expert": {
+    "deployment_format": "keras_float32_plus_tflite_int8",
     "deployment_target": "esp32_s3",
     "hidden_layers": [
       {
@@ -89,7 +92,7 @@
     "name": "encoder_expert",
     "notes": [
       "Embedded target architecture is a compact MLP over sliding-window features.",
-      "Training should include a fault head and action head; deployment may use fault logits plus an action lookup table.",
+      "Training uses TensorFlow/Keras with fault and bounded-action heads.",
       "ML output may request bounded actions only; deterministic safety supervisor authorizes critical actions."
     ],
     "output_activation": "softmax",
@@ -103,9 +106,11 @@
     ],
     "output_dim": 6,
     "purpose": "Diagnose encoder pulse, direction, signal-noise, and mismatch faults.",
-    "quantization": "int8_candidate"
+    "quantization": "int8_candidate",
+    "training_framework": "tensorflow_keras"
   },
   "esp32_expert": {
+    "deployment_format": "keras_float32_plus_tflite_int8",
     "deployment_target": "esp32_s3",
     "hidden_layers": [
       {
@@ -143,7 +148,7 @@
     "name": "esp32_expert",
     "notes": [
       "Embedded target architecture is a compact MLP over sliding-window features.",
-      "Training should include a fault head and action head; deployment may use fault logits plus an action lookup table.",
+      "Training uses TensorFlow/Keras with fault and bounded-action heads.",
       "ML output may request bounded actions only; deterministic safety supervisor authorizes critical actions."
     ],
     "output_activation": "softmax",
@@ -158,9 +163,11 @@
     ],
     "output_dim": 7,
     "purpose": "Diagnose main ESP32 firmware, reset, heartbeat, task timing, and communication faults.",
-    "quantization": "int8_candidate"
+    "quantization": "int8_candidate",
+    "training_framework": "tensorflow_keras"
   },
   "lighting_expert": {
+    "deployment_format": "keras_float32_plus_tflite_int8",
     "deployment_target": "esp32_s3",
     "hidden_layers": [
       {
@@ -197,7 +204,7 @@
     "name": "lighting_expert",
     "notes": [
       "Embedded target architecture is a compact MLP over sliding-window features.",
-      "Training should include a fault head and action head; deployment may use fault logits plus an action lookup table.",
+      "Training uses TensorFlow/Keras with fault and bounded-action heads.",
       "ML output may request bounded actions only; deterministic safety supervisor authorizes critical actions."
     ],
     "output_activation": "softmax",
@@ -211,9 +218,11 @@
     ],
     "output_dim": 6,
     "purpose": "Diagnose LED, wiring, driver, short/open circuit, brightness mismatch, and thermal faults.",
-    "quantization": "int8_candidate"
+    "quantization": "int8_candidate",
+    "training_framework": "tensorflow_keras"
   },
   "motor_driver_expert": {
+    "deployment_format": "keras_float32_plus_tflite_int8",
     "deployment_target": "esp32_s3",
     "hidden_layers": [
       {
@@ -256,7 +265,7 @@
     "name": "motor_driver_expert",
     "notes": [
       "Embedded target architecture is a compact MLP over sliding-window features.",
-      "Training should include a fault head and action head; deployment may use fault logits plus an action lookup table.",
+      "Training uses TensorFlow/Keras with fault and bounded-action heads.",
       "ML output may request bounded actions only; deterministic safety supervisor authorizes critical actions."
     ],
     "output_activation": "softmax",
@@ -270,9 +279,11 @@
     ],
     "output_dim": 6,
     "purpose": "Diagnose motor-driver power stage, thermal, enable, and undervoltage faults.",
-    "quantization": "int8_candidate"
+    "quantization": "int8_candidate",
+    "training_framework": "tensorflow_keras"
   },
   "motor_expert": {
+    "deployment_format": "keras_float32_plus_tflite_int8",
     "deployment_target": "esp32_s3",
     "hidden_layers": [
       {
@@ -317,7 +328,7 @@
     "name": "motor_expert",
     "notes": [
       "Embedded target architecture is a compact MLP over sliding-window features.",
-      "Training should include a fault head and action head; deployment may use fault logits plus an action lookup table.",
+      "Training uses TensorFlow/Keras with fault and bounded-action heads.",
       "ML output may request bounded actions only; deterministic safety supervisor authorizes critical actions."
     ],
     "output_activation": "softmax",
@@ -331,9 +342,11 @@
     ],
     "output_dim": 6,
     "purpose": "Diagnose mechanical motor-side faults from PWM, RPM, current, temperature, load, and vibration.",
-    "quantization": "int8_candidate"
+    "quantization": "int8_candidate",
+    "training_framework": "tensorflow_keras"
   },
   "pi_expert": {
+    "deployment_format": "keras_float32_plus_tflite_int8",
     "deployment_target": "esp32_s3",
     "hidden_layers": [
       {
@@ -365,7 +378,7 @@
     "name": "pi_expert",
     "notes": [
       "Embedded target architecture is a compact MLP over sliding-window features.",
-      "Training should include a fault head and action head; deployment may use fault logits plus an action lookup table.",
+      "Training uses TensorFlow/Keras with fault and bounded-action heads.",
       "ML output may request bounded actions only; deterministic safety supervisor authorizes critical actions."
     ],
     "output_activation": "softmax",
@@ -381,9 +394,11 @@
     ],
     "output_dim": 8,
     "purpose": "Diagnose Raspberry Pi or Jetson health faults from heartbeat and system metrics.",
-    "quantization": "int8_candidate"
+    "quantization": "int8_candidate",
+    "training_framework": "tensorflow_keras"
   },
   "power_expert": {
+    "deployment_format": "keras_float32_plus_tflite_int8",
     "deployment_target": "esp32_s3",
     "hidden_layers": [
       {
@@ -422,7 +437,7 @@
     "name": "power_expert",
     "notes": [
       "Embedded target architecture is a compact MLP over sliding-window features.",
-      "Training should include a fault head and action head; deployment may use fault logits plus an action lookup table.",
+      "Training uses TensorFlow/Keras with fault and bounded-action heads.",
       "ML output may request bounded actions only; deterministic safety supervisor authorizes critical actions."
     ],
     "output_activation": "softmax",
@@ -436,9 +451,11 @@
     ],
     "output_dim": 6,
     "purpose": "Diagnose battery, voltage sag, undervoltage, loose connection, regulator, and load faults.",
-    "quantization": "int8_candidate"
+    "quantization": "int8_candidate",
+    "training_framework": "tensorflow_keras"
   },
   "router": {
+    "deployment_format": "keras_float32_plus_tflite_int8",
     "deployment_target": "esp32_s3",
     "hidden_layers": [
       {
@@ -489,9 +506,11 @@
     ],
     "output_dim": 6,
     "purpose": "Route each telemetry window to top-2 or top-3 subsystem experts.",
-    "quantization": "int8_candidate"
+    "quantization": "int8_candidate",
+    "training_framework": "tensorflow_keras"
   },
   "unknown_fault_sequence_analyzer": {
+    "deployment_format": "keras_or_savedmodel_pi_side",
     "deployment_target": "raspberry_pi_or_jetson",
     "hidden_layers": [
       {
@@ -543,6 +562,7 @@
     ],
     "output_dim": 4,
     "purpose": "Embed unknown-fault sequences for clustering, similarity search, and root-cause ranking.",
-    "quantization": "not_required_for_pi"
+    "quantization": "not_required_for_pi",
+    "training_framework": "tensorflow_keras"
   }
 }

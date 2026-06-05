@@ -2,7 +2,7 @@
   "model_name": "esp32_expert",
   "purpose": "Classify main-controller heartbeat, reset, watchdog, and communication faults.",
   "input_csvs": [
-    "ai_ml/datasets/esp32_expert/raw/healthy_run_001.csv"
+    "ai_ml/datasets/merged/esp32_expert_raw_merged.csv"
   ],
   "artifact_dir": "ai_ml/models/esp32_expert/artifacts",
   "label_column": "fault_label",
@@ -21,5 +21,12 @@
   ],
   "n_estimators": 100,
   "max_depth": 8,
-  "random_state": 7
+  "random_state": 7,
+  "hidden_layers": [
+    24,
+    12
+  ],
+  "learning_rate": 0.001,
+  "batch_size": 16,
+  "epochs": 120
 }

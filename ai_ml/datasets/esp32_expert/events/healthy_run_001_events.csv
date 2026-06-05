@@ -1,3 +1,2 @@
-timestamp_ms,elapsed_s,event,fault_active,fault_label,severity
-1000,0.000,run_start,0,healthy,0
-1300,0.300,run_stop,0,healthy,0
+elapsed_s,event,label,severity
+0.000,run_started,healthy,0

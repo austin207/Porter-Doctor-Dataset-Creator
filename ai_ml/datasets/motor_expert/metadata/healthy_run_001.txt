@@ -1,8 +1,7 @@
 run_id=healthy_run_001
-robot_id=porter_dev
 expert_name=motor_expert
+robot_id=porter_dev
 fault_label=healthy
-fault_subsystem=motor
-severity=0
-sample_period_ms=100
-telemetry_stale_ms=500
+sample_rows=18
+source=deterministic_sample_generator
+safety_note=simulated telemetry only; no hardware fault generation

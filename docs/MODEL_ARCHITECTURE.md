@@ -590,8 +590,8 @@ Read raw CSV logs.
 Use event markers to assign labels.
 Build sliding-window features.
 Split by run_id, not random rows.
-Train baseline Random Forest or XGBoost for comparison.
-Train compact MLP for embedded deployment.
+Train compact TensorFlow/Keras MLP for embedded deployment.
+Optionally train Random Forest or XGBoost only as comparison models.
 Evaluate confusion matrix.
 Export INT8 quantized model.
 Save feature ordering JSON.
@@ -602,8 +602,10 @@ Artifacts per model:
 
 ```text
 model_float32.keras
+model_float32.tflite
 model_int8.tflite
 feature_order.json
+action_map.json
 label_map.json
 normalization_stats.json
 evaluation_report.md

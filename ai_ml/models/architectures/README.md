@@ -4,7 +4,8 @@ Architecture definitions for RoboMoE-Diag models.
 
 These files describe the intended model shapes from the PRD and model
 architecture context. They are not embedded inference code. They are the source
-of truth for later training, validation, quantization, and export to ESP32-S3.
+of truth for TensorFlow/Keras training, validation, INT8 quantization, and
+export to ESP32-S3.
 
 ## Included Architectures
 
@@ -40,6 +41,14 @@ features -> Dense 32 -> ReLU -> Dense 16 -> ReLU -> fault/action heads
 ESP32 timing health and lighting models use smaller variants where the feature
 space is simpler. The router uses top-2 or top-3 routing and does not make final
 fault decisions.
+
+Current trainable artifacts are:
+
+```text
+model_float32.keras
+model_float32.tflite
+model_int8.tflite
+```
 
 ## Generate Summary
 

@@ -2,7 +2,7 @@
   "model_name": "motor_expert",
   "purpose": "Classify motor-side mechanical and electrical behavior faults.",
   "input_csvs": [
-    "ai_ml/datasets/motor_expert/raw/healthy_run_001.csv"
+    "ai_ml/datasets/merged/motor_expert_raw_merged.csv"
   ],
   "artifact_dir": "ai_ml/models/motor_expert/artifacts",
   "label_column": "fault_label",
@@ -26,5 +26,12 @@
   ],
   "n_estimators": 100,
   "max_depth": 8,
-  "random_state": 7
+  "random_state": 7,
+  "hidden_layers": [
+    32,
+    16
+  ],
+  "learning_rate": 0.001,
+  "batch_size": 16,
+  "epochs": 120
 }

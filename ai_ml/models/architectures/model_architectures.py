@@ -36,6 +36,8 @@ class ModelArchitecture:
     name: str
     deployment_target: str
     model_family: str
+    training_framework: str
+    deployment_format: str
     purpose: str
     input_features: List[str]
     output_classes: List[str]
@@ -71,6 +73,8 @@ def expert_mlp(
         name=name,
         deployment_target="esp32_s3",
         model_family="small_mlp",
+        training_framework="tensorflow_keras",
+        deployment_format="keras_float32_plus_tflite_int8",
         purpose=purpose,
         input_features=features,
         hidden_layers=hidden_layers,
@@ -78,7 +82,7 @@ def expert_mlp(
         output_activation="softmax",
         notes=[
             "Embedded target architecture is a compact MLP over sliding-window features.",
-            "Training should include a fault head and action head; deployment may use fault logits plus an action lookup table.",
+            "Training uses TensorFlow/Keras with fault and bounded-action heads.",
             "ML output may request bounded actions only; deterministic safety supervisor authorizes critical actions.",
         ],
     )
@@ -90,6 +94,8 @@ def architectures() -> Dict[str, ModelArchitecture]:
             name="anomaly_detector",
             deployment_target="esp32_s3",
             model_family="tiny_autoencoder",
+            training_framework="tensorflow_keras",
+            deployment_format="keras_float32_plus_tflite_int8",
             purpose="Always-on abnormal-behavior detector trained primarily on healthy telemetry windows.",
             input_features=[
                 "rpm_error_left",
@@ -123,13 +129,15 @@ def architectures() -> Dict[str, ModelArchitecture]:
             notes=[
                 "PRD allows small autoencoder or one-class model.",
                 "Unknown fault rule starts as anomaly_score > 0.80 and max_expert_confidence < 0.55.",
-                "For current baseline training code, IsolationForest is used until neural export is added.",
+                "Current implementation trains a TensorFlow/Keras autoencoder and exports float32 and int8 TFLite artifacts.",
             ],
         ),
         "router": ModelArchitecture(
             name="moe_router",
             deployment_target="esp32_s3",
             model_family="small_mlp",
+            training_framework="tensorflow_keras",
+            deployment_format="keras_float32_plus_tflite_int8",
             purpose="Route each telemetry window to top-2 or top-3 subsystem experts.",
             input_features=[
                 "power_voltage_drop",
@@ -411,6 +419,8 @@ def architectures() -> Dict[str, ModelArchitecture]:
             name="unknown_fault_sequence_analyzer",
             deployment_target="raspberry_pi_or_jetson",
             model_family="temporal_autoencoder_plus_clustering",
+            training_framework="tensorflow_keras",
+            deployment_format="keras_or_savedmodel_pi_side",
             purpose="Embed unknown-fault sequences for clustering, similarity search, and root-cause ranking.",
             input_features=[
                 "pre_fault_30s_multisignal_sequence",

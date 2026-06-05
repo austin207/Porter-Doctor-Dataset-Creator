@@ -1,0 +1,2 @@
+elapsed_s,event,label,severity
+0.000,fault_injected_simulated,excessive_system_load,3

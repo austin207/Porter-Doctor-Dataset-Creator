@@ -78,6 +78,31 @@ west zephyr-export
 python -m pip install -r zephyr/scripts/requirements.txt
 ```
 
+## Python Environment
+
+Use a local `uv` virtual environment for dataset tools and offline model
+training:
+
+```powershell
+python -m pip install --user uv
+uv venv
+.\.venv\Scripts\Activate.ps1
+uv pip install -r requirements.txt
+```
+
+On Windows, if `uv` is installed but not on `PATH`, replace `uv` with:
+
+```powershell
+& "$env:APPDATA\Python\Python312\Scripts\uv.exe"
+```
+
+If script activation is blocked, call the environment Python directly:
+
+```powershell
+uv pip install --python .\.venv\Scripts\python.exe -r requirements.txt
+.\.venv\Scripts\python.exe ai_ml/dataset_tools/merge_raw_runs.py --expert all
+```
+
 Build a logger with the helper:
 
 ```powershell
@@ -206,16 +231,22 @@ Build the first router dataset:
 python ai_ml/router_dataset_builder/build_router_dataset.py
 ```
 
-Train baseline models:
+Train TensorFlow models:
 
 ```powershell
 python ai_ml/models/train_all_baselines.py
 ```
 
-Train all currently trainable baseline models in parallel:
+Train all currently trainable TensorFlow models in parallel:
 
 ```powershell
 .\train.ps1
+```
+
+Run with the `uv` virtual environment Python without activating the shell:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\train.ps1 -Python .\.venv\Scripts\python.exe
 ```
 
 If your PowerShell execution policy blocks local scripts, run:
@@ -230,16 +261,46 @@ If training dependencies are missing, install them through the script:
 powershell -ExecutionPolicy Bypass -File .\train.ps1 -InstallDeps
 ```
 
-This prepares merged datasets and router rows, then trains Power, Motor, Motor
-Driver, ESP32, Lighting, Router, and Anomaly Detector models at the same time.
+This prepares merged datasets and router rows, then trains TensorFlow/Keras
+Power, Motor, Motor Driver, ESP32, Lighting, Router, and Anomaly Detector
+models at the same time.
 Artifacts are written to:
 
 ```text
 ai_ml/models/<model_name>/artifacts/
 ```
 
-Current artifacts are scikit-learn baseline `.joblib` models plus JSON metadata.
-They are not TensorFlow Lite files yet. The embedded target architecture is
-still INT8 TensorFlow Lite Micro / LiteRT Micro style MLPs for ESP32-S3, but the
-TFLite export step is planned under `ai_ml/training/*/export_tflite_int8.py` and
-is not implemented yet.
+Tune TensorFlow/Keras hyperparameters from YAML:
+
+```powershell
+python ai_ml/models/tune_hyperparameters.py
+```
+
+Tune one model:
+
+```powershell
+python ai_ml/models/tune_hyperparameters.py --model power_expert
+```
+
+Edit search spaces here:
+
+```text
+ai_ml/models/hyperparameter_tuning.yaml
+```
+
+Current artifacts include TensorFlow/Keras and TensorFlow Lite files:
+
+```text
+model_float32.keras
+model_float32.tflite
+model_int8.tflite
+feature_order.json
+label_map.json
+action_map.json
+normalization_stats.json
+metrics.json
+```
+
+The embedded target architecture is INT8 TensorFlow Lite Micro / LiteRT Micro
+style MLPs for ESP32-S3. The exported `.tflite` files are offline artifacts; the
+firmware-side TFLite Micro integration is still a later embedded step.

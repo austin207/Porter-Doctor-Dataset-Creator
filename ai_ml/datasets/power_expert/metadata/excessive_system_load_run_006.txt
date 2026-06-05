@@ -1,0 +1,7 @@
+run_id=excessive_system_load_run_006
+expert_name=power_expert
+robot_id=porter_dev
+fault_label=excessive_system_load
+sample_rows=18
+source=deterministic_sample_generator
+safety_note=simulated telemetry only; no hardware fault generation
