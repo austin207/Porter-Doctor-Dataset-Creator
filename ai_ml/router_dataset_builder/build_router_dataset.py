@@ -11,7 +11,7 @@ import argparse
 import csv
 import json
 from pathlib import Path
-from typing import Dict, Iterable, List
+from typing import Dict, Iterable, List, Tuple
 
 
 OUTPUT_COLUMNS = [
@@ -45,9 +45,29 @@ def load_label_map(path: Path) -> Dict[str, str]:
     return {label: target for target, labels in data["labels"].items() for label in labels}
 
 
-def iter_feature_files(dataset_root: Path) -> Iterable[Path]:
+def expert_name_from_path(path: Path) -> str:
+    for part in path.parts:
+        if part.endswith("_expert"):
+            return part
+    return ""
+
+
+def iter_input_files(dataset_root: Path) -> Iterable[Tuple[Path, str]]:
+    feature_files = []
     for expert_dir in sorted(dataset_root.glob("*_expert/features")):
-        yield from sorted(expert_dir.glob("*.csv"))
+        feature_files.extend(sorted(expert_dir.glob("*.csv")))
+
+    if feature_files:
+        for feature_file in feature_files:
+            yield feature_file, ""
+        return
+
+    # Sample datasets only include raw logger CSVs. Use them as a fallback so
+    # the initial router baseline can be trained before feature builders exist.
+    for raw_dir in sorted(dataset_root.glob("*_expert/raw")):
+        source_expert = raw_dir.parent.name
+        for raw_file in sorted(raw_dir.glob("*.csv")):
+            yield raw_file, source_expert
 
 
 def first_present(row: Dict[str, str], names: List[str], default: str) -> str:
@@ -58,9 +78,11 @@ def first_present(row: Dict[str, str], names: List[str], default: str) -> str:
     return default
 
 
-def map_row(row: Dict[str, str], label_map: Dict[str, str]) -> Dict[str, str]:
+def map_row(row: Dict[str, str], label_map: Dict[str, str], source_expert: str = "") -> Dict[str, str]:
     fault_label = first_present(row, ["fault_label", "label"], "unknown")
     target = label_map.get(fault_label, "unknown_fault")
+    if fault_label == "healthy" and source_expert in EXPERT_SCORE_COLUMNS:
+        target = source_expert
     out = {column: "0.0" for column in OUTPUT_COLUMNS}
 
     out["run_id"] = first_present(row, ["run_id"], "unknown_run")
@@ -105,11 +127,11 @@ def build_router_dataset(dataset_root: Path, config_path: Path, output_dir: Path
     output_dir.mkdir(parents=True, exist_ok=True)
 
     rows: List[Dict[str, str]] = []
-    for feature_file in iter_feature_files(dataset_root):
-        with feature_file.open("r", encoding="ascii", newline="") as f:
+    for input_file, source_expert in iter_input_files(dataset_root):
+        with input_file.open("r", encoding="ascii", newline="") as f:
             reader = csv.DictReader(f)
             for row in reader:
-                rows.append(map_row(row, label_map))
+                rows.append(map_row(row, label_map, source_expert))
 
     output_csv = output_dir / "router_dataset.csv"
     with output_csv.open("w", encoding="ascii", newline="") as f:

@@ -1,1 +1,16 @@
 run_id,window_start_s,window_end_s,power_score,motor_score,driver_score,esp32_score,lighting_score,target_expert,fault_label,fault_subsystem,severity
+healthy_run_001,0.000,0.000,0.0,0.0,0.0,1.0,0.0,esp32_expert,healthy,esp32_controller,0
+healthy_run_001,0.100,0.100,0.0,0.0,0.0,1.0,0.0,esp32_expert,healthy,esp32_controller,0
+healthy_run_001,0.200,0.200,0.0,0.0,0.0,1.0,0.0,esp32_expert,healthy,esp32_controller,0
+healthy_run_001,0.000,0.000,0.0,0.0,0.0,0.0,1.0,lighting_expert,healthy,lighting,0
+healthy_run_001,0.100,0.100,0.0,0.0,0.0,0.0,1.0,lighting_expert,healthy,lighting,0
+healthy_run_001,0.200,0.200,0.0,0.0,0.0,0.0,1.0,lighting_expert,healthy,lighting,0
+healthy_run_001,0.000,0.000,0.0,0.0,1.0,0.0,0.0,motor_driver_expert,healthy,motor_driver,0
+healthy_run_001,0.100,0.100,0.0,0.0,1.0,0.0,0.0,motor_driver_expert,healthy,motor_driver,0
+healthy_run_001,0.200,0.200,0.0,0.0,1.0,0.0,0.0,motor_driver_expert,healthy,motor_driver,0
+healthy_run_001,0.000,0.000,0.0,1.0,0.0,0.0,0.0,motor_expert,healthy,motor,0
+healthy_run_001,0.100,0.100,0.0,1.0,0.0,0.0,0.0,motor_expert,healthy,motor,0
+healthy_run_001,0.200,0.200,0.0,1.0,0.0,0.0,0.0,motor_expert,healthy,motor,0
+healthy_run_001,0.000,0.000,1.0,0.0,0.0,0.0,0.0,power_expert,healthy,power,0
+healthy_run_001,0.100,0.100,1.0,0.0,0.0,0.0,0.0,power_expert,healthy,power,0
+healthy_run_001,0.200,0.200,1.0,0.0,0.0,0.0,0.0,power_expert,healthy,power,0

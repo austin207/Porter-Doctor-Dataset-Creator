@@ -211,3 +211,35 @@ Train baseline models:
 ```powershell
 python ai_ml/models/train_all_baselines.py
 ```
+
+Train all currently trainable baseline models in parallel:
+
+```powershell
+.\train.ps1
+```
+
+If your PowerShell execution policy blocks local scripts, run:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\train.ps1
+```
+
+If training dependencies are missing, install them through the script:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\train.ps1 -InstallDeps
+```
+
+This prepares merged datasets and router rows, then trains Power, Motor, Motor
+Driver, ESP32, Lighting, Router, and Anomaly Detector models at the same time.
+Artifacts are written to:
+
+```text
+ai_ml/models/<model_name>/artifacts/
+```
+
+Current artifacts are scikit-learn baseline `.joblib` models plus JSON metadata.
+They are not TensorFlow Lite files yet. The embedded target architecture is
+still INT8 TensorFlow Lite Micro / LiteRT Micro style MLPs for ESP32-S3, but the
+TFLite export step is planned under `ai_ml/training/*/export_tflite_int8.py` and
+is not implemented yet.

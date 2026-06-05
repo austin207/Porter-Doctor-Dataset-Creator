@@ -38,6 +38,30 @@ Train baseline models:
 python ai_ml/models/train_all_baselines.py
 ```
 
+Train all currently trainable baseline models in parallel from the repository
+root:
+
+```powershell
+.\train.ps1
+```
+
+If local script execution is blocked:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\train.ps1
+```
+
+If dependencies are missing:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\train.ps1 -InstallDeps
+```
+
+Current training outputs are scikit-learn `.joblib` baseline models under
+`ai_ml/models/<model_name>/artifacts/`. The intended embedded deployment format
+is INT8 TensorFlow Lite Micro / LiteRT Micro for ESP32-S3, but TFLite export is
+not implemented yet.
+
 Train one model:
 
 ```powershell
