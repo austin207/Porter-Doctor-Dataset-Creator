@@ -23,7 +23,4 @@ zephyr_library_sources(
   generated/router_model_data.c
   generated/router_metadata.c
   generated/router_bundle.c
-  generated/anomaly_detector_model_data.c
-  generated/anomaly_detector_metadata.c
-  generated/anomaly_detector_bundle.c
 )

@@ -1,7 +1,7 @@
 {
   "architecture_lock_source": "ai_ml/models/build_best_candidates.py",
   "architecture_locked": true,
-  "architecture_locked_at_utc": "2026-06-05T16:21:42Z",
+  "architecture_locked_at_utc": "2026-06-05T17:02:36Z",
   "artifact_dir": "ai_ml/models/motor_driver_expert/artifacts",
   "batch_size": 8,
   "epochs": 60,

@@ -1,10 +1,10 @@
 {
   "architecture_lock_source": "ai_ml/models/build_best_candidates.py",
   "architecture_locked": true,
-  "architecture_locked_at_utc": "2026-06-05T16:23:07Z",
+  "architecture_locked_at_utc": "2026-06-05T17:16:41Z",
   "artifact_dir": "ai_ml/models/lighting_expert/artifacts",
   "batch_size": 8,
-  "epochs": 60,
+  "epochs": 100,
   "feature_columns": [
     "fault_active",
     "severity",
@@ -18,8 +18,8 @@
     "telemetry_age_ms"
   ],
   "hidden_layers": [
-    6,
-    3
+    8,
+    4
   ],
   "input_csvs": [
     "ai_ml/datasets/merged/lighting_expert_raw_merged.csv"

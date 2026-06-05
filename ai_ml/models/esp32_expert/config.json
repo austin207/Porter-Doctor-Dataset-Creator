@@ -1,7 +1,7 @@
 {
   "architecture_lock_source": "ai_ml/models/build_best_candidates.py",
   "architecture_locked": true,
-  "architecture_locked_at_utc": "2026-06-05T16:22:25Z",
+  "architecture_locked_at_utc": "2026-06-05T17:09:43Z",
   "artifact_dir": "ai_ml/models/esp32_expert/artifacts",
   "batch_size": 8,
   "epochs": 60,
