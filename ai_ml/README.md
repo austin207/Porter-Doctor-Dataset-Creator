@@ -115,6 +115,89 @@ Tune one model:
 python ai_ml/models/tune_hyperparameters.py --model power_expert
 ```
 
+Tuning writes repeat-aware candidate tables and ESP32-aware recommendations:
+
+```text
+ai_ml/models/<model_name>/artifacts/hyperparameter_candidates.csv
+ai_ml/models/<model_name>/artifacts/hyperparameter_tuning_results.json
+ai_ml/models/<model_name>/artifacts/recommended_config_patch.json
+```
+
+Check trained model size against current ESP32 limits:
+
+```powershell
+python ai_ml/models/check_esp32_feasibility.py
+```
+
+Export available best-candidate models to Zephyr-ready C files:
+
+```powershell
+python ai_ml/models/export_zephyr_inference.py
+```
+
+Export one model:
+
+```powershell
+python ai_ml/models/export_zephyr_inference.py --model power_expert
+```
+
+Outputs are written to `zephyr_inference/generated/` and include
+the INT8 TFLite bytes, feature normalization metadata, labels, actions, and a
+bundle struct for firmware code.
+
+Build and lock a quick best-candidate model package:
+
+```powershell
+python ai_ml/models/build_best_candidates.py --model power_expert
+```
+
+Build quick best-candidate packages for every model:
+
+```powershell
+python ai_ml/models/build_best_candidates.py
+```
+
+Run the slower full YAML search:
+
+```powershell
+python ai_ml/models/build_best_candidates.py --full
+```
+
+The generated candidate package includes final artifacts, evaluation plots,
+ESP32 feasibility output, and an HTML report:
+
+```text
+ai_ml/models/<model_name>/best_candidate/candidate_report.html
+ai_ml/models/<model_name>/best_candidate/selected_parameters.json
+ai_ml/models/<model_name>/best_candidate/selected_parameters.yaml
+```
+
+`build_best_candidates.py` tunes candidate architectures, repeats training for
+stability, ranks candidates with ESP32 size pressure, locks the selected fields
+into the model config, retrains, evaluates, checks ESP32 feasibility, writes the
+best-candidate package, and cleans transient outputs by default.
+
+The builder defaults to a practical quick search of 8 candidates x 1 repeat per
+model. Use `--full` for the YAML defaults, or pass `--max-combinations` and
+`--repeats` to control runtime manually.
+
+Run inference for one model:
+
+```powershell
+python ai_ml/models/power_expert/infer.py --input ai_ml/datasets/merged/power_expert_raw_merged.csv
+```
+
+Evaluate all trained models and generate plots:
+
+```powershell
+python ai_ml/models/evaluate_all_models.py
+```
+
+Outputs are written to `ai_ml/evaluation_outputs/` and include prediction
+CSVs, JSON reports, model summaries, layer tables, confusion matrices,
+confidence/action distributions, anomaly reconstruction plots, and architecture
+diagrams.
+
 The tuning search spaces live in:
 
 ```text

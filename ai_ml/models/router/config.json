@@ -1,11 +1,10 @@
 {
-  "model_name": "moe_router",
-  "purpose": "Route a telemetry window to the top subsystem experts.",
-  "input_csvs": [
-    "ai_ml/router_dataset_builder/output/router_dataset.csv"
-  ],
+  "architecture_lock_source": "ai_ml/models/build_best_candidates.py",
+  "architecture_locked": true,
+  "architecture_locked_at_utc": "2026-06-05T16:24:01Z",
   "artifact_dir": "ai_ml/models/router/artifacts",
-  "label_column": "target_expert",
+  "batch_size": 8,
+  "epochs": 60,
   "feature_columns": [
     "power_score",
     "motor_score",
@@ -14,14 +13,18 @@
     "lighting_score",
     "severity"
   ],
-  "n_estimators": 100,
-  "max_depth": 6,
-  "random_state": 7,
   "hidden_layers": [
-    32,
-    16
+    8,
+    4
   ],
+  "input_csvs": [
+    "ai_ml/router_dataset_builder/output/router_dataset.csv"
+  ],
+  "label_column": "target_expert",
   "learning_rate": 0.001,
-  "batch_size": 16,
-  "epochs": 120
+  "max_depth": 6,
+  "model_name": "moe_router",
+  "n_estimators": 100,
+  "purpose": "Route a telemetry window to the top subsystem experts.",
+  "random_state": 7
 }

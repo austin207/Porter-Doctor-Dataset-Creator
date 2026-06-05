@@ -182,6 +182,25 @@ DEFAULT_HIDDEN_LAYERS = {
 }
 
 
+ESP32_MODEL_LIMITS = {
+    "router": {
+        "max_parameters": 10000,
+        "max_int8_tflite_bytes": 64 * 1024,
+    },
+    "default_expert": {
+        "max_parameters": 20000,
+        "max_int8_tflite_bytes": 96 * 1024,
+    },
+    "anomaly_detector": {
+        "max_parameters": 20000,
+        "max_int8_tflite_bytes": 96 * 1024,
+    },
+    "total_embedded": {
+        "max_parameters": 100000,
+    },
+}
+
+
 def action_for_label(label: str) -> str:
     return FAULT_ACTIONS.get(label, "ACTION_WARN_OPERATOR")
 
@@ -239,6 +258,69 @@ def build_classifier_model(
         metrics={"fault_output": ["accuracy"], "action_output": ["accuracy"]},
     )
     return model
+
+
+def parameter_count_for_classifier(input_dim: int, hidden_layers: List[int], class_count: int, action_count: int) -> int:
+    previous = input_dim
+    total = 0
+    for units in hidden_layers:
+        total += (previous * int(units)) + int(units)
+        previous = int(units)
+    total += (previous * class_count) + class_count
+    total += (previous * action_count) + action_count
+    return int(total)
+
+
+def parameter_count_for_autoencoder(input_dim: int, hidden_layers: List[int]) -> int:
+    if len(hidden_layers) < 3:
+        hidden_layers = [16, 8, 16]
+    previous = input_dim
+    total = 0
+    for units in hidden_layers:
+        total += (previous * int(units)) + int(units)
+        previous = int(units)
+    total += (previous * input_dim) + input_dim
+    return int(total)
+
+
+def esp32_limits_for_model(model_name: str) -> Dict[str, int]:
+    if model_name in ("router", "moe_router"):
+        return ESP32_MODEL_LIMITS["router"]
+    if model_name in ("anomaly_detector", "always_on_anomaly_detector"):
+        return ESP32_MODEL_LIMITS["anomaly_detector"]
+    return ESP32_MODEL_LIMITS["default_expert"]
+
+
+def estimate_int8_tflite_bytes(parameter_count: int, input_dim: int, output_dim: int, output_count: int = 1) -> int:
+    # TFLite flatbuffers include tensor metadata, quantization params, and op
+    # tables. This is intentionally conservative for small MLPs.
+    metadata_overhead = 4096 + (512 * output_count)
+    tensor_overhead = 128 * (input_dim + output_dim + output_count)
+    return int(parameter_count + metadata_overhead + tensor_overhead)
+
+
+def esp32_feasibility_report(
+    model_name: str,
+    parameter_count: int,
+    estimated_int8_tflite_bytes: int,
+    actual_int8_tflite_bytes: int | None = None,
+) -> Dict[str, object]:
+    limits = esp32_limits_for_model(model_name)
+    tflite_bytes = actual_int8_tflite_bytes if actual_int8_tflite_bytes is not None else estimated_int8_tflite_bytes
+    return {
+        "model_name": model_name,
+        "parameter_count": int(parameter_count),
+        "estimated_int8_tflite_bytes": int(estimated_int8_tflite_bytes),
+        "actual_int8_tflite_bytes": int(actual_int8_tflite_bytes) if actual_int8_tflite_bytes is not None else None,
+        "max_parameters": int(limits["max_parameters"]),
+        "max_int8_tflite_bytes": int(limits["max_int8_tflite_bytes"]),
+        "fits_parameter_limit": int(parameter_count) <= int(limits["max_parameters"]),
+        "fits_tflite_size_limit": int(tflite_bytes) <= int(limits["max_int8_tflite_bytes"]),
+        "notes": [
+            "Size check is necessary but not sufficient for ESP32 deployment.",
+            "Final proof requires TFLite Micro arena sizing and on-device latency tests.",
+        ],
+    }
 
 
 def representative_dataset(x_train):
@@ -347,9 +429,17 @@ def train_tensorflow_classifier(config_path: Path) -> None:
         "classes": labels,
         "actions": actions,
         "hidden_layers": hidden_layers,
+        "parameter_count": int(model.count_params()),
         "epochs_run": int(len(history.history.get("loss", []))),
         "final_train_fault_accuracy": float(history.history.get("fault_output_accuracy", [0.0])[-1]),
     }
+    int8_path = artifact_dir / "model_int8.tflite"
+    metrics["esp32_feasibility"] = esp32_feasibility_report(
+        config["model_name"],
+        int(model.count_params()),
+        estimate_int8_tflite_bytes(int(model.count_params()), len(feature_columns), len(labels) + len(actions), 2),
+        int8_path.stat().st_size if int8_path.exists() else None,
+    )
     if len(x_test):
         y_test_fault = np.array(label_indices(test_df[label_column].astype(str), labels), dtype=np.int32)
         predictions = model.predict(x_test, verbose=0)[0].argmax(axis=1)
@@ -371,6 +461,7 @@ def train_tensorflow_classifier(config_path: Path) -> None:
                 "keras": str(keras_path),
                 **tflite_outputs,
             },
+            "esp32_feasibility": metrics["esp32_feasibility"],
             "safety_note": "Offline model artifact only. ML may request bounded actions; deterministic firmware must authorize safety actions.",
         },
     )
@@ -436,18 +527,28 @@ def train_tensorflow_anomaly_detector(config_path: Path) -> None:
     train_errors = ((x_train - recon) ** 2).mean(axis=1)
     threshold = float(np.quantile(train_errors, 0.95))
 
+    int8_path = artifact_dir / "model_int8.tflite"
+    metrics = {
+        "model_name": config["model_name"],
+        "model_type": "tensorflow_keras_autoencoder",
+        "train_rows": int(len(train_split)),
+        "val_rows": int(len(val_split)),
+        "test_rows": int(len(test_split)),
+        "feature_count": int(len(feature_columns)),
+        "hidden_layers": config.get("hidden_layers", [16, 8, 16]),
+        "parameter_count": int(model.count_params()),
+        "epochs_run": int(len(history.history.get("loss", []))),
+        "reconstruction_error_threshold_p95": threshold,
+        "esp32_feasibility": esp32_feasibility_report(
+            config["model_name"],
+            int(model.count_params()),
+            estimate_int8_tflite_bytes(int(model.count_params()), len(feature_columns), len(feature_columns), 1),
+            int8_path.stat().st_size if int8_path.exists() else None,
+        ),
+    }
     write_json(
         artifact_dir / "metrics.json",
-        {
-            "model_name": config["model_name"],
-            "model_type": "tensorflow_keras_autoencoder",
-            "train_rows": int(len(train_split)),
-            "val_rows": int(len(val_split)),
-            "test_rows": int(len(test_split)),
-            "feature_count": int(len(feature_columns)),
-            "epochs_run": int(len(history.history.get("loss", []))),
-            "reconstruction_error_threshold_p95": threshold,
-        },
+        metrics,
     )
     write_json(artifact_dir / "feature_order.json", {"feature_order": feature_columns})
     write_json(artifact_dir / "feature_columns.json", {"feature_columns": feature_columns})
@@ -462,6 +563,7 @@ def train_tensorflow_anomaly_detector(config_path: Path) -> None:
                 "keras": str(keras_path),
                 **tflite_outputs,
             },
+            "esp32_feasibility": metrics["esp32_feasibility"],
             "unknown_fault_rule": "reconstruction_error > threshold and max_expert_confidence < 0.55",
         },
     )

@@ -1,87 +1,37 @@
 # Porter Doctor
 
-Repository: Porter-Doctor-Dataset-Creator
+Porter Doctor is the dataset-generation, offline ML, and embedded inference
+workspace for RoboMoE-Diag. The project collects hardware telemetry with Zephyr
+loggers, trains compact TensorFlow/TensorFlow Lite models, evaluates them, and
+exports INT8 TFLite models as C arrays for Zephyr/TFLite Micro integration.
 
-Porter Doctor is the dataset-generation and embedded fault-diagnosis workspace
-for RoboMoE-Diag.
-
-## Goal
-
-Build a modular robot fault diagnosis system using real hardware telemetry from
-multiple expert loggers, then later train compact Mixture-of-Experts models.
-
-No ML inference or emergency-stop control is implemented in the firmware yet.
+No firmware should execute unsafe ML emergency-stop behavior. ML output may only
+request bounded actions for later firmware handling.
 
 ## Project Layout
 
 ```text
-Porter Doctor/
-  data_collectors/
-    hardware_config.json
-    build_logger.ps1
-    common/
-    scripts/
-    power_expert_logger/
-    motor_expert_logger/
-    motor_driver_expert_logger/
-    esp32_expert_logger/
-    lighting_expert_logger/
-
-  ai_ml/
-    datasets/
-    dataset_tools/
-    models/
-    router_dataset_builder/
-    training/
-
-  docs/
-    MODEL_ARCHITECTURE.md
-
-  zephyr/
-  modules/
-  bootloader/
-  tools/
+data_collectors/                 Zephyr dataset logger applications
+data_collectors/hardware_config.json
+data_collectors/scripts/         Overlay generation helpers
+ai_ml/datasets/                  Sample and collected datasets
+ai_ml/dataset_tools/             Dataset merge tools
+ai_ml/router_dataset_builder/    Router dataset builder
+ai_ml/models/                    Training, tuning, evaluation, export scripts
+docs/                            Architecture notes
+zephyr_inference/                Zephyr-side model C-array export package
+zephyr/, modules/, bootloader/   west-managed dependencies
 ```
 
-`data_collectors/` contains Zephyr firmware and hardware configuration.
-
-`ai_ml/` contains sample datasets, merge tools, router dataset tooling, baseline
-model code, and future training/export scaffolds. These are offline Python
-models and planning files, not embedded ESP32 inference artifacts.
-
-`docs/MODEL_ARCHITECTURE.md` captures the current model architecture plan:
-feature windows, compact MLP shapes, router behavior, anomaly handling, and
-export artifact expectations.
-
-`zephyr/`, `modules/`, `bootloader/`, and `tools/` are downloaded by `west` and
-are ignored by git.
-
-## Recommended Build Order
-
-1. `power_expert_logger`
-2. `motor_expert_logger`
-3. `motor_driver_expert_logger`
-4. `esp32_expert_logger`
-5. `lighting_expert_logger`
-6. `ai_ml/router_dataset_builder`
-
-Start with the Power Expert because it only needs ESP32, INA226, and microSD.
-
-## Local Zephyr Workspace
-
-This repo is intended to be the Zephyr workspace root. From this folder:
+Run commands from the repository root:
 
 ```powershell
-.\init_local_west.ps1
-west update
-west zephyr-export
-python -m pip install -r zephyr/scripts/requirements.txt
+cd "C:\Users\austi\OneDrive\Desktop\career\VirtusCo (Startup)\Porter Doctor"
 ```
 
 ## Python Environment
 
-Use a local `uv` virtual environment for dataset tools and offline model
-training:
+Install `uv`, create the virtual environment, and install dependencies:
 
 ```powershell
 python -m pip install --user uv
@@ -90,217 +40,556 @@ uv venv
 uv pip install -r requirements.txt
 ```
 
-On Windows, if `uv` is installed but not on `PATH`, replace `uv` with:
+If `uv` is not on `PATH`:
 
 ```powershell
-& "$env:APPDATA\Python\Python312\Scripts\uv.exe"
+& "$env:APPDATA\Python\Python312\Scripts\uv.exe" venv
+& "$env:APPDATA\Python\Python312\Scripts\uv.exe" pip install --python .\.venv\Scripts\python.exe -r requirements.txt
 ```
 
-If script activation is blocked, call the environment Python directly:
+Run Python tools without activating the shell:
 
 ```powershell
-uv pip install --python .\.venv\Scripts\python.exe -r requirements.txt
-.\.venv\Scripts\python.exe ai_ml/dataset_tools/merge_raw_runs.py --expert all
+.\.venv\Scripts\python.exe ai_ml\models\evaluate_all_models.py --help
 ```
 
-Build a logger with the helper:
+Install or refresh dependencies with pip:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+python -m pip install -r zephyr\scripts\requirements.txt
+```
+
+If `west` fails with `ModuleNotFoundError: colorama`, repair the system Python
+environment used by `west.exe`:
+
+```powershell
+python -m pip install colorama
+```
+
+## Zephyr Workspace
+
+Initialize or refresh Zephyr:
+
+```powershell
+.\init_local_west.ps1
+west update
+west zephyr-export
+python -m pip install -r zephyr\scripts\requirements.txt
+```
+
+If `west` needs the user Python site path on Windows:
+
+```powershell
+$env:PYTHONPATH="$env:APPDATA\Python\Python312\site-packages"
+west update
+```
+
+## Firmware Logger Builds
+
+Build each logger:
 
 ```powershell
 .\data_collectors\build_logger.ps1 -Expert power_expert_logger
+.\data_collectors\build_logger.ps1 -Expert motor_expert_logger
+.\data_collectors\build_logger.ps1 -Expert motor_driver_expert_logger
+.\data_collectors\build_logger.ps1 -Expert esp32_expert_logger
+.\data_collectors\build_logger.ps1 -Expert lighting_expert_logger
 ```
 
-Build and flash:
+Build and flash each logger:
 
 ```powershell
 .\data_collectors\build_logger.ps1 -Expert power_expert_logger -Flash
+.\data_collectors\build_logger.ps1 -Expert motor_expert_logger -Flash
+.\data_collectors\build_logger.ps1 -Expert motor_driver_expert_logger -Flash
+.\data_collectors\build_logger.ps1 -Expert esp32_expert_logger -Flash
+.\data_collectors\build_logger.ps1 -Expert lighting_expert_logger -Flash
 ```
 
-Direct west build example:
+Direct `west build` examples:
 
 ```powershell
 west build -b esp32_devkitc/esp32/procpu data_collectors/power_expert_logger -d build/power_expert_logger
+west build -b esp32_devkitc/esp32/procpu data_collectors/motor_expert_logger -d build/motor_expert_logger
+west build -b esp32_devkitc/esp32/procpu data_collectors/motor_driver_expert_logger -d build/motor_driver_expert_logger
+west build -b esp32_devkitc/esp32/procpu data_collectors/esp32_expert_logger -d build/esp32_expert_logger
+west build -b esp32_devkitc/esp32/procpu data_collectors/lighting_expert_logger -d build/lighting_expert_logger
 ```
 
-## Hardware Pin Configuration
+Direct flash examples:
 
-Edit this file instead of hand-editing Zephyr overlays:
+```powershell
+west flash -d build/power_expert_logger
+west flash -d build/motor_expert_logger
+west flash -d build/motor_driver_expert_logger
+west flash -d build/esp32_expert_logger
+west flash -d build/lighting_expert_logger
+```
+
+Logger board and pin settings live in:
 
 ```text
 data_collectors/hardware_config.json
 ```
 
-The important board fields are:
-
-```json
-{
-  "active_board": "esp32_devkitc_procpu",
-  "boards": {
-    "esp32_devkitc_procpu": {
-      "zephyr_board": "esp32_devkitc/esp32/procpu"
-    }
-  }
-}
-```
-
-Each logger automatically generates its Zephyr overlay at CMake configure time:
+Generated overlays are created at CMake configure time and should not be edited:
 
 ```text
 data_collectors/<expert_logger>/boards/generated.overlay
 ```
 
-Do not edit `boards/generated.overlay` directly. It is generated from
-`data_collectors/hardware_config.json`.
+## Dataset Commands
 
-To change SD card pins, edit:
-
-```json
-"sd_card": {
-  "sck_gpio": 18,
-  "miso_gpio": 19,
-  "mosi_gpio": 23,
-  "cs_gpio": 25
-}
-```
-
-To enable a UART telemetry link, set the UART and expert telemetry alias to
-`enabled: true`. Example for the Motor Expert:
-
-```json
-"uarts": {
-  "uart1": {
-    "enabled": true,
-    "tx_gpio": 17,
-    "rx_gpio": 16,
-    "baudrate": 115200
-  }
-},
-"experts": {
-  "motor": {
-    "telemetry_uart": {
-      "enabled": true,
-      "uart": "uart1",
-      "alias": "motor-tel-uart"
-    }
-  }
-}
-```
-
-Current generator support is for ESP32 DevKitC style overlays. STM32 can be
-added by adding an STM32 emitter in
-`data_collectors/scripts/generate_zephyr_overlay.py` while keeping the same
-`hardware_config.json` structure.
-
-## Sample Datasets And Merging
-
-Sample dataset files are included under:
-
-```text
-ai_ml/datasets/
-```
-
-Each expert has:
-
-```text
-raw/healthy_run_001.csv
-events/healthy_run_001_events.csv
-metadata/healthy_run_001.txt
-features/
-```
-
-Merge all raw run files into one CSV:
+Merge all raw runs into one combined CSV:
 
 ```powershell
-python ai_ml/dataset_tools/merge_raw_runs.py --expert all
+.\.venv\Scripts\python.exe ai_ml\dataset_tools\merge_raw_runs.py --expert all
 ```
 
 Merge one expert:
 
 ```powershell
-python ai_ml/dataset_tools/merge_raw_runs.py --expert motor_expert
+.\.venv\Scripts\python.exe ai_ml\dataset_tools\merge_raw_runs.py --expert power_expert
+.\.venv\Scripts\python.exe ai_ml\dataset_tools\merge_raw_runs.py --expert motor_expert
+.\.venv\Scripts\python.exe ai_ml\dataset_tools\merge_raw_runs.py --expert motor_driver_expert
+.\.venv\Scripts\python.exe ai_ml\dataset_tools\merge_raw_runs.py --expert esp32_expert
+.\.venv\Scripts\python.exe ai_ml\dataset_tools\merge_raw_runs.py --expert lighting_expert
 ```
 
-Create one merged raw CSV per expert:
+Create one merged CSV per expert:
 
 ```powershell
-python ai_ml/dataset_tools/merge_raw_runs.py --per-expert
+.\.venv\Scripts\python.exe ai_ml\dataset_tools\merge_raw_runs.py --per-expert
 ```
 
-Build the first router dataset:
+Use custom dataset/output directories:
 
 ```powershell
-python ai_ml/router_dataset_builder/build_router_dataset.py
+.\.venv\Scripts\python.exe ai_ml\dataset_tools\merge_raw_runs.py --dataset-root ai_ml\datasets --output-dir ai_ml\datasets\merged --expert all
 ```
 
-Train TensorFlow models:
+Build the router dataset:
 
 ```powershell
-python ai_ml/models/train_all_baselines.py
+.\.venv\Scripts\python.exe ai_ml\router_dataset_builder\build_router_dataset.py
 ```
 
-Train all currently trainable TensorFlow models in parallel:
+Build the router dataset with explicit paths:
 
 ```powershell
-.\train.ps1
+.\.venv\Scripts\python.exe ai_ml\router_dataset_builder\build_router_dataset.py --dataset-root ai_ml\datasets --config ai_ml\router_dataset_builder\router_rules.yaml --output-dir ai_ml\datasets\router
 ```
 
-Run with the `uv` virtual environment Python without activating the shell:
+Show dataset tool help:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\dataset_tools\merge_raw_runs.py --help
+.\.venv\Scripts\python.exe ai_ml\router_dataset_builder\build_router_dataset.py --help
+```
+
+## Training Commands
+
+Prepare datasets and train all current TensorFlow models in parallel:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\train.ps1 -Python .\.venv\Scripts\python.exe
 ```
 
-If your PowerShell execution policy blocks local scripts, run:
+Install dependencies through the training script:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\train.ps1
+powershell -ExecutionPolicy Bypass -File .\train.ps1 -Python .\.venv\Scripts\python.exe -InstallDeps
 ```
 
-If training dependencies are missing, install them through the script:
+Skip dataset preparation and train only:
 
 ```powershell
-powershell -ExecutionPolicy Bypass -File .\train.ps1 -InstallDeps
+powershell -ExecutionPolicy Bypass -File .\train.ps1 -Python .\.venv\Scripts\python.exe -SkipPrepare
 ```
 
-This prepares merged datasets and router rows, then trains TensorFlow/Keras
-Power, Motor, Motor Driver, ESP32, Lighting, Router, and Anomaly Detector
-models at the same time.
-Artifacts are written to:
+Include placeholder model folders:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\train.ps1 -Python .\.venv\Scripts\python.exe -IncludePlaceholders
+```
+
+Train all models sequentially:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\train_all_baselines.py
+```
+
+Train one model:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\power_expert\train.py
+.\.venv\Scripts\python.exe ai_ml\models\motor_expert\train.py
+.\.venv\Scripts\python.exe ai_ml\models\motor_driver_expert\train.py
+.\.venv\Scripts\python.exe ai_ml\models\esp32_expert\train.py
+.\.venv\Scripts\python.exe ai_ml\models\lighting_expert\train.py
+.\.venv\Scripts\python.exe ai_ml\models\router\train.py
+.\.venv\Scripts\python.exe ai_ml\models\anomaly_detector\train.py
+```
+
+Current trained artifacts are written to:
 
 ```text
 ai_ml/models/<model_name>/artifacts/
 ```
 
-Tune TensorFlow/Keras hyperparameters from YAML:
-
-```powershell
-python ai_ml/models/tune_hyperparameters.py
-```
-
-Tune one model:
-
-```powershell
-python ai_ml/models/tune_hyperparameters.py --model power_expert
-```
-
-Edit search spaces here:
-
-```text
-ai_ml/models/hyperparameter_tuning.yaml
-```
-
-Current artifacts include TensorFlow/Keras and TensorFlow Lite files:
+Typical artifacts:
 
 ```text
 model_float32.keras
 model_float32.tflite
 model_int8.tflite
 feature_order.json
+feature_columns.json
 label_map.json
 action_map.json
 normalization_stats.json
 metrics.json
+model_card.json
 ```
 
-The embedded target architecture is INT8 TensorFlow Lite Micro / LiteRT Micro
-style MLPs for ESP32-S3. The exported `.tflite` files are offline artifacts; the
-firmware-side TFLite Micro integration is still a later embedded step.
+## Hyperparameter Tuning And Best Candidates
+
+Tune all models using `ai_ml/models/hyperparameter_tuning.yaml`:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\tune_hyperparameters.py
+```
+
+Tune one or more models:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\tune_hyperparameters.py --model power_expert
+.\.venv\Scripts\python.exe ai_ml\models\tune_hyperparameters.py --model power_expert --model router
+```
+
+Quick tuning smoke test:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\tune_hyperparameters.py --model power_expert --max-combinations 4 --repeats 1
+```
+
+Use a custom tuning YAML:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\tune_hyperparameters.py --config ai_ml\models\hyperparameter_tuning.yaml
+```
+
+Show tuning help:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\tune_hyperparameters.py --help
+```
+
+Check trained models against ESP32 size limits:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\check_esp32_feasibility.py
+```
+
+Build a quick best-candidate package for every model:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\build_best_candidates.py
+```
+
+Build one quick best-candidate package:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\build_best_candidates.py --model power_expert
+```
+
+Run the slower full YAML search:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\build_best_candidates.py --full
+```
+
+Override search size:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\build_best_candidates.py --model power_expert --max-combinations 8 --repeats 1
+```
+
+Tune/report without locking config:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\build_best_candidates.py --model power_expert --max-combinations 2 --repeats 1 --no-apply
+```
+
+Skip specific stages:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\build_best_candidates.py --model power_expert --skip-tune
+.\.venv\Scripts\python.exe ai_ml\models\build_best_candidates.py --model power_expert --skip-train
+.\.venv\Scripts\python.exe ai_ml\models\build_best_candidates.py --model power_expert --skip-evaluate
+```
+
+Keep intermediate outputs:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\build_best_candidates.py --model power_expert --keep-intermediates
+.\.venv\Scripts\python.exe ai_ml\models\build_best_candidates.py --model power_expert --keep-evaluation-outputs
+```
+
+Show best-candidate help:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\build_best_candidates.py --help
+```
+
+Best-candidate outputs are local generated artifacts:
+
+```text
+ai_ml/models/<model_name>/best_candidate/candidate_report.html
+ai_ml/models/<model_name>/best_candidate/selected_parameters.json
+ai_ml/models/<model_name>/best_candidate/selected_parameters.yaml
+```
+
+## Python Inference Commands
+
+Run inference with default inputs:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\power_expert\infer.py
+.\.venv\Scripts\python.exe ai_ml\models\motor_expert\infer.py
+.\.venv\Scripts\python.exe ai_ml\models\motor_driver_expert\infer.py
+.\.venv\Scripts\python.exe ai_ml\models\esp32_expert\infer.py
+.\.venv\Scripts\python.exe ai_ml\models\lighting_expert\infer.py
+.\.venv\Scripts\python.exe ai_ml\models\router\infer.py
+.\.venv\Scripts\python.exe ai_ml\models\anomaly_detector\infer.py
+```
+
+Run inference with explicit input/output:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\power_expert\infer.py --input ai_ml\datasets\merged\power_expert_raw_merged.csv --output ai_ml\evaluation_outputs\power_expert\predictions.csv
+```
+
+Limit rows and return top-k classes:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\power_expert\infer.py --limit 5 --top-k 3
+```
+
+Show inference help:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\power_expert\infer.py --help
+```
+
+## Evaluation And Graphs
+
+Evaluate every trained model and generate plots:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\evaluate_all_models.py
+```
+
+Evaluate one or more models:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\evaluate_all_models.py --model power_expert
+.\.venv\Scripts\python.exe ai_ml\models\evaluate_all_models.py --model power_expert --model router
+```
+
+Write evaluation outputs somewhere else:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\evaluate_all_models.py --output-dir C:\tmp\porter_doctor_eval
+```
+
+Show evaluation help:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\evaluate_all_models.py --help
+```
+
+Default outputs:
+
+```text
+ai_ml/evaluation_outputs/
+```
+
+Each model evaluation includes prediction CSVs, JSON reports, model summaries,
+layer tables, confusion matrices or anomaly plots, confidence/action
+distributions, and architecture diagrams.
+
+## Zephyr Inference Export And Build
+
+Export all trained INT8 TFLite models as Zephyr-ready C arrays and metadata:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\export_zephyr_inference.py
+```
+
+Export one model:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\export_zephyr_inference.py --model power_expert
+```
+
+Export multiple selected models:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\export_zephyr_inference.py --model power_expert --model router
+```
+
+Force export source:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\export_zephyr_inference.py --source auto
+.\.venv\Scripts\python.exe ai_ml\models\export_zephyr_inference.py --source best_candidate
+.\.venv\Scripts\python.exe ai_ml\models\export_zephyr_inference.py --source artifacts
+```
+
+Write generated files elsewhere:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\export_zephyr_inference.py --output-dir C:\tmp\porter_zephyr_models
+```
+
+Show Zephyr export help:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\export_zephyr_inference.py --help
+```
+
+Generated model files:
+
+```text
+zephyr_inference/generated/<model>_model_data.c
+zephyr_inference/generated/<model>_model_data.h
+zephyr_inference/generated/<model>_metadata.c
+zephyr_inference/generated/<model>_metadata.h
+zephyr_inference/generated/<model>_bundle.c
+zephyr_inference/generated/<model>_bundle.h
+zephyr_inference/generated/<model>_manifest.json
+zephyr_inference/generated/manifest.json
+```
+
+The TFLite flatbuffer is converted to a C array such as:
+
+```c
+const unsigned char porter_power_expert_model_tflite[] = { ... };
+```
+
+Build the Zephyr inference smoke app. Run the export command first so
+`zephyr_inference/generated/` exists:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\export_zephyr_inference.py
+west build -b esp32_devkitc/esp32/procpu zephyr_inference/smoke_app -d build/zephyr_inference_smoke
+```
+
+Flash the smoke app:
+
+```powershell
+west flash -d build/zephyr_inference_smoke
+```
+
+The smoke app compiles all generated model C arrays and metadata into a Zephyr
+application and prints model sizes/counts. It does not invoke TFLite Micro yet.
+The next embedded step is to add the TFLite Micro or LiteRT Micro runtime and
+create an interpreter from `metadata->model_data`.
+
+## End-To-End Manual Test Flows
+
+Offline ML smoke flow:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\dataset_tools\merge_raw_runs.py --expert all
+.\.venv\Scripts\python.exe ai_ml\dataset_tools\merge_raw_runs.py --per-expert
+.\.venv\Scripts\python.exe ai_ml\router_dataset_builder\build_router_dataset.py
+powershell -ExecutionPolicy Bypass -File .\train.ps1 -Python .\.venv\Scripts\python.exe -SkipPrepare
+.\.venv\Scripts\python.exe ai_ml\models\evaluate_all_models.py
+.\.venv\Scripts\python.exe ai_ml\models\check_esp32_feasibility.py
+.\.venv\Scripts\python.exe ai_ml\models\export_zephyr_inference.py
+```
+
+Best-candidate flow for one model:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\build_best_candidates.py --model power_expert
+.\.venv\Scripts\python.exe ai_ml\models\export_zephyr_inference.py --model power_expert
+```
+
+Full candidate search for every model:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\build_best_candidates.py --full
+.\.venv\Scripts\python.exe ai_ml\models\export_zephyr_inference.py
+```
+
+Firmware logger smoke flow:
+
+```powershell
+.\init_local_west.ps1
+west update
+west zephyr-export
+python -m pip install -r zephyr\scripts\requirements.txt
+.\data_collectors\build_logger.ps1 -Expert power_expert_logger
+```
+
+Zephyr inference smoke flow:
+
+```powershell
+.\.venv\Scripts\python.exe ai_ml\models\export_zephyr_inference.py
+west build -b esp32_devkitc/esp32/procpu zephyr_inference/smoke_app -d build/zephyr_inference_smoke
+west flash -d build/zephyr_inference_smoke
+```
+
+## Validation Commands For Development
+
+Compile touched Python scripts:
+
+```powershell
+.\.venv\Scripts\python.exe -m py_compile ai_ml\models\export_zephyr_inference.py
+.\.venv\Scripts\python.exe -m py_compile ai_ml\models\tune_hyperparameters.py ai_ml\models\build_best_candidates.py ai_ml\models\evaluate_all_models.py
+```
+
+Remove Python cache folders:
+
+```powershell
+Get-ChildItem ai_ml,data_collectors -Recurse -Directory -Filter __pycache__ | Remove-Item -Recurse -Force
+```
+
+Check git state:
+
+```powershell
+git status --short
+```
+
+## Generated Files Not For Commit
+
+These are generated or local-environment outputs and are ignored by git:
+
+```text
+.venv/
+.west/
+zephyr/
+modules/
+bootloader/
+tools/
+build/
+**/boards/generated.overlay
+**/artifacts/
+**/best_candidate/
+ai_ml/evaluation_outputs/
+ai_ml/models/tuning_summary.json
+ai_ml/models/*_hyperparameter_candidates.csv
+zephyr_inference/generated/
+__pycache__/
+```
+
+## Safety Notes
+
+Do not add fault-generation code that can damage motors, motor drivers,
+batteries, wiring, or lighting hardware. Do not add ML-controlled emergency-stop
+execution. Keep board-specific pins in `data_collectors/hardware_config.json`,
+not portable `src/main.c`.

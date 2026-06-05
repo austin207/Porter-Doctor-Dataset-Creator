@@ -1,11 +1,10 @@
 {
-  "model_name": "lighting_expert",
-  "purpose": "Classify lighting-system LED, driver, wiring, and brightness faults.",
-  "input_csvs": [
-    "ai_ml/datasets/merged/lighting_expert_raw_merged.csv"
-  ],
+  "architecture_lock_source": "ai_ml/models/build_best_candidates.py",
+  "architecture_locked": true,
+  "architecture_locked_at_utc": "2026-06-05T16:23:07Z",
   "artifact_dir": "ai_ml/models/lighting_expert/artifacts",
-  "label_column": "fault_label",
+  "batch_size": 8,
+  "epochs": 60,
   "feature_columns": [
     "fault_active",
     "severity",
@@ -18,14 +17,18 @@
     "telemetry_valid",
     "telemetry_age_ms"
   ],
-  "n_estimators": 100,
-  "max_depth": 8,
-  "random_state": 7,
   "hidden_layers": [
-    16,
-    8
+    6,
+    3
   ],
+  "input_csvs": [
+    "ai_ml/datasets/merged/lighting_expert_raw_merged.csv"
+  ],
+  "label_column": "fault_label",
   "learning_rate": 0.001,
-  "batch_size": 16,
-  "epochs": 120
+  "max_depth": 8,
+  "model_name": "lighting_expert",
+  "n_estimators": 100,
+  "purpose": "Classify lighting-system LED, driver, wiring, and brightness faults.",
+  "random_state": 7
 }

@@ -17,6 +17,10 @@ out/
 __pycache__/
 *.pyc
 ai_ml/models/tuning_summary.json
+ai_ml/models/*_hyperparameter_candidates.csv
+ai_ml/evaluation_outputs/
+**/best_candidate/
+zephyr_inference/generated/
 
 # Editor/OS noise
 .vscode/

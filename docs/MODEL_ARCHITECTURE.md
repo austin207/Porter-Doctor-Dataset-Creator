@@ -37,6 +37,11 @@ Total embedded ML: preferably less than 100k parameters
 Inference: less than 50 ms for router plus top-2 experts
 ```
 
+Current tuning uses the sample datasets as a sandbox to choose compact models.
+The tuner ranks candidates by sample-set score, repeat stability, and ESP32 size
+pressure. Passing this check does not prove real-world accuracy; it only means
+the architecture is a reasonable embedded candidate before real datasets arrive.
+
 ## Input Style
 
 Embedded models use sliding-window features, not long raw telemetry sequences.

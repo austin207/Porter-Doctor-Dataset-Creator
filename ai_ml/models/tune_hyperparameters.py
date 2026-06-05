@@ -4,13 +4,16 @@
 from __future__ import annotations
 
 import argparse
+import csv
 import itertools
 import os
 import sys
+import time
 from pathlib import Path
 from typing import Dict, Iterable, List, Tuple
 
-os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "2")
+os.environ.setdefault("TF_CPP_MIN_LOG_LEVEL", "3")
+os.environ.setdefault("TF_ENABLE_ONEDNN_OPTS", "0")
 
 sys.path.append(str(Path(__file__).resolve().parent / "common"))
 from training_utils import (  # noqa: E402
@@ -22,9 +25,13 @@ from training_utils import (  # noqa: E402
     label_indices,
     load_json,
     normalize_frames,
+    parameter_count_for_autoencoder,
+    parameter_count_for_classifier,
     read_csvs,
     require_tensorflow_deps,
     resolve_paths,
+    esp32_feasibility_report,
+    estimate_int8_tflite_bytes,
     split_by_run_id,
     split_by_run_id_with_label_coverage,
     write_json,
@@ -54,6 +61,26 @@ def limited_param_grid(params: Dict[str, List], max_combinations: int) -> List[D
     return rows[:max_combinations] if max_combinations > 0 else rows
 
 
+def write_csv(path: Path, rows: List[Dict]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if not rows:
+        return
+    with path.open("w", encoding="ascii", newline="") as f:
+        writer = csv.DictWriter(f, fieldnames=list(rows[0]))
+        writer.writeheader()
+        writer.writerows(rows)
+
+
+def embedded_score(mean_metric: float, std_metric: float, parameter_count: int, limit: int, weights: Dict, higher_is_better: bool) -> float:
+    normalized_size = parameter_count / max(1, limit)
+    quality = mean_metric if higher_is_better else -mean_metric
+    return float(
+        (float(weights.get("accuracy_weight", 1.0)) * quality)
+        - (float(weights.get("size_penalty_weight", 0.08)) * normalized_size)
+        - (float(weights.get("instability_penalty_weight", 0.15)) * std_metric)
+    )
+
+
 def selected_items(items: Dict[str, Dict], requested: Iterable[str] | None) -> Iterable[Tuple[str, Dict]]:
     requested_set = set(requested or [])
     for name, entry in items.items():
@@ -61,7 +88,7 @@ def selected_items(items: Dict[str, Dict], requested: Iterable[str] | None) -> I
             yield name, entry
 
 
-def tune_classifier(name: str, entry: Dict, defaults: Dict) -> Tuple[str, Dict]:
+def tune_classifier(name: str, entry: Dict, defaults: Dict, max_combinations_override: int | None = None, repeats_override: int | None = None) -> Tuple[str, Dict]:
     import numpy as np
 
     config_path = resolve_repo_path(entry["config"])
@@ -90,29 +117,115 @@ def tune_classifier(name: str, entry: Dict, defaults: Dict) -> Tuple[str, Dict]:
     y_train_action = np.array(label_indices([action_for_label(label) for label in train_df[label_column].astype(str)], actions), dtype=np.int32)
     y_eval_fault = np.array(label_indices(eval_df[label_column].astype(str), labels), dtype=np.int32)
 
-    max_combinations = int(defaults.get("search", {}).get("max_combinations", 18))
+    max_combinations = max_combinations_override if max_combinations_override is not None else int(defaults.get("search", {}).get("max_combinations", 18))
+    repeats = repeats_override if repeats_override is not None else int(defaults.get("search", {}).get("repeats", 1))
+    score_weights = defaults.get("search", {}).get("embedded_score", {})
     candidates = limited_param_grid(entry.get("params", {}), max_combinations)
+    candidate_rows = []
     best = None
+    total_runs = len(candidates) * repeats
+    print(
+        f"{name}: tuning {len(candidates)} candidates x {repeats} repeats "
+        f"({total_runs} training runs)",
+        flush=True,
+    )
 
-    for params in candidates:
-        model = build_classifier_model(
-            len(feature_columns),
-            params.get("hidden_layers", config.get("hidden_layers", [32, 16])),
-            len(labels),
-            len(actions),
-            float(params.get("learning_rate", config.get("learning_rate", 0.001))),
+    for candidate_index, params in enumerate(candidates, start=1):
+        started = time.perf_counter()
+        hidden_layers = params.get("hidden_layers", config.get("hidden_layers", [32, 16]))
+        parameter_count = parameter_count_for_classifier(len(feature_columns), hidden_layers, len(labels), len(actions))
+        size_estimate = estimate_int8_tflite_bytes(parameter_count, len(feature_columns), len(labels) + len(actions), 2)
+        feasibility = esp32_feasibility_report(name, parameter_count, size_estimate)
+        scores = []
+        for repeat_index in range(repeats):
+            print(
+                f"{name}: candidate {candidate_index}/{len(candidates)} "
+                f"repeat {repeat_index + 1}/{repeats} "
+                f"layers={hidden_layers} lr={params.get('learning_rate', config.get('learning_rate', 0.001))} "
+                f"batch={params.get('batch_size', config.get('batch_size', 16))} "
+                f"epochs={params.get('epochs', config.get('epochs', 80))}",
+                flush=True,
+            )
+            model = build_classifier_model(
+                len(feature_columns),
+                hidden_layers,
+                len(labels),
+                len(actions),
+                float(params.get("learning_rate", config.get("learning_rate", 0.001))),
+            )
+            model.fit(
+                x_train,
+                {"fault_output": y_train_fault, "action_output": y_train_action},
+                epochs=int(params.get("epochs", config.get("epochs", 80))),
+                batch_size=int(params.get("batch_size", config.get("batch_size", 16))),
+                verbose=0,
+            )
+            predictions = model(x_eval, training=False)[0].numpy().argmax(axis=1)
+            scores.append(float((predictions == y_eval_fault).mean()))
+        mean_score = float(np.mean(scores))
+        std_score = float(np.std(scores))
+        candidate_score = embedded_score(
+            mean_score,
+            std_score,
+            parameter_count,
+            int(feasibility["max_parameters"]),
+            score_weights,
+            higher_is_better=True,
         )
-        model.fit(
-            x_train,
-            {"fault_output": y_train_fault, "action_output": y_train_action},
-            epochs=int(params.get("epochs", config.get("epochs", 80))),
-            batch_size=int(params.get("batch_size", config.get("batch_size", 16))),
-            verbose=0,
+        row = {
+            "model_name": name,
+            "hidden_layers": str(hidden_layers),
+            "learning_rate": params.get("learning_rate", config.get("learning_rate", 0.001)),
+            "batch_size": params.get("batch_size", config.get("batch_size", 16)),
+            "epochs": params.get("epochs", config.get("epochs", 80)),
+            "mean_score": mean_score,
+            "std_score": std_score,
+            "embedded_score": candidate_score,
+            "parameter_count": parameter_count,
+            "estimated_int8_tflite_bytes": size_estimate,
+            "fits_parameter_limit": feasibility["fits_parameter_limit"],
+            "fits_tflite_size_limit": feasibility["fits_tflite_size_limit"],
+            "repeat_scores": ";".join(f"{score:.6f}" for score in scores),
+        }
+        candidate_rows.append(row)
+        if best is None or candidate_score > best["embedded_score"]:
+            best = {"params": params, "score": mean_score, "score_std": std_score, "embedded_score": candidate_score, "feasibility": feasibility}
+        elapsed = time.perf_counter() - started
+        print(
+            f"{name}: candidate {candidate_index}/{len(candidates)} done "
+            f"score={mean_score:.3f} std={std_score:.3f} embedded={candidate_score:.3f} "
+            f"params={parameter_count} elapsed={elapsed:.1f}s",
+            flush=True,
         )
-        predictions = model.predict(x_eval, verbose=0)[0].argmax(axis=1)
-        score = float((predictions == y_eval_fault).mean())
-        if best is None or score > best["score"]:
-            best = {"params": params, "score": score}
+
+    artifact_dir = resolve_repo_path(config["artifact_dir"])
+    write_csv(artifact_dir / "hyperparameter_candidates.csv", candidate_rows)
+    write_csv(
+        ROOT / f"ai_ml/models/{name}_hyperparameter_candidates.csv",
+        candidate_rows,
+    )
+
+    config_update = dict(config)
+    config_update.update(
+        {
+            "hidden_layers": best["params"].get("hidden_layers", config.get("hidden_layers", [32, 16])),
+            "learning_rate": float(best["params"].get("learning_rate", config.get("learning_rate", 0.001))),
+            "batch_size": int(best["params"].get("batch_size", config.get("batch_size", 16))),
+            "epochs": int(best["params"].get("epochs", config.get("epochs", 80))),
+        }
+    )
+    write_json(
+        artifact_dir / "recommended_config_patch.json",
+        {
+            "config_path": str(config_path.relative_to(ROOT)),
+            "recommended_fields": {
+                "hidden_layers": config_update["hidden_layers"],
+                "learning_rate": config_update["learning_rate"],
+                "batch_size": config_update["batch_size"],
+                "epochs": config_update["epochs"],
+            },
+        },
+    )
 
     result = {
         "model_name": name,
@@ -120,15 +233,20 @@ def tune_classifier(name: str, entry: Dict, defaults: Dict) -> Tuple[str, Dict]:
         "config": str(config_path.relative_to(ROOT)),
         "feature_columns": feature_columns,
         "candidate_count": len(candidates),
+        "repeats": repeats,
         "best_params": best["params"],
         "best_score": best["score"],
+        "best_score_std": best["score_std"],
+        "best_embedded_score": best["embedded_score"],
+        "esp32_feasibility": best["feasibility"],
         "score_metric": "validation_fault_accuracy" if not val_df.empty else "test_fault_accuracy",
+        "candidate_csv": str((artifact_dir / "hyperparameter_candidates.csv").relative_to(ROOT)),
     }
-    write_json(resolve_repo_path(config["artifact_dir"]) / "hyperparameter_tuning_results.json", result)
+    write_json(artifact_dir / "hyperparameter_tuning_results.json", result)
     return name, result
 
 
-def tune_anomaly(name: str, entry: Dict, defaults: Dict) -> Tuple[str, Dict]:
+def tune_anomaly(name: str, entry: Dict, defaults: Dict, max_combinations_override: int | None = None, repeats_override: int | None = None) -> Tuple[str, Dict]:
     import numpy as np
 
     config_path = resolve_repo_path(entry["config"])
@@ -148,27 +266,103 @@ def tune_anomaly(name: str, entry: Dict, defaults: Dict) -> Tuple[str, Dict]:
 
     x_train, x_val, x_test, _stats = normalize_frames(train_split, val_split, test_split, feature_columns)
     x_eval = x_val if not val_split.empty else x_test
-    max_combinations = int(defaults.get("search", {}).get("max_combinations", 18))
+    max_combinations = max_combinations_override if max_combinations_override is not None else int(defaults.get("search", {}).get("max_combinations", 18))
+    repeats = repeats_override if repeats_override is not None else int(defaults.get("search", {}).get("repeats", 1))
+    score_weights = defaults.get("search", {}).get("embedded_score", {})
     candidates = limited_param_grid(entry.get("params", {}), max_combinations)
+    candidate_rows = []
     best = None
+    total_runs = len(candidates) * repeats
+    print(
+        f"{name}: tuning {len(candidates)} candidates x {repeats} repeats "
+        f"({total_runs} training runs)",
+        flush=True,
+    )
 
-    for params in candidates:
-        model = build_autoencoder(
-            len(feature_columns),
-            params.get("hidden_layers", config.get("hidden_layers", [16, 8, 16])),
-            float(params.get("learning_rate", config.get("learning_rate", 0.001))),
+    for candidate_index, params in enumerate(candidates, start=1):
+        started = time.perf_counter()
+        hidden_layers = params.get("hidden_layers", config.get("hidden_layers", [16, 8, 16]))
+        parameter_count = parameter_count_for_autoencoder(len(feature_columns), hidden_layers)
+        size_estimate = estimate_int8_tflite_bytes(parameter_count, len(feature_columns), len(feature_columns), 1)
+        feasibility = esp32_feasibility_report(name, parameter_count, size_estimate)
+        losses = []
+        for repeat_index in range(repeats):
+            print(
+                f"{name}: candidate {candidate_index}/{len(candidates)} "
+                f"repeat {repeat_index + 1}/{repeats} "
+                f"layers={hidden_layers} lr={params.get('learning_rate', config.get('learning_rate', 0.001))} "
+                f"batch={params.get('batch_size', config.get('batch_size', 16))} "
+                f"epochs={params.get('epochs', config.get('epochs', 80))}",
+                flush=True,
+            )
+            model = build_autoencoder(
+                len(feature_columns),
+                hidden_layers,
+                float(params.get("learning_rate", config.get("learning_rate", 0.001))),
+            )
+            model.fit(
+                x_train,
+                x_train,
+                epochs=int(params.get("epochs", config.get("epochs", 80))),
+                batch_size=int(params.get("batch_size", config.get("batch_size", 16))),
+                verbose=0,
+            )
+            recon = model(x_eval, training=False).numpy()
+            losses.append(float(np.mean((x_eval - recon) ** 2)))
+        mean_loss = float(np.mean(losses))
+        std_loss = float(np.std(losses))
+        candidate_score = embedded_score(
+            mean_loss,
+            std_loss,
+            parameter_count,
+            int(feasibility["max_parameters"]),
+            score_weights,
+            higher_is_better=False,
         )
-        model.fit(
-            x_train,
-            x_train,
-            epochs=int(params.get("epochs", config.get("epochs", 80))),
-            batch_size=int(params.get("batch_size", config.get("batch_size", 16))),
-            verbose=0,
+        row = {
+            "model_name": name,
+            "hidden_layers": str(hidden_layers),
+            "learning_rate": params.get("learning_rate", config.get("learning_rate", 0.001)),
+            "batch_size": params.get("batch_size", config.get("batch_size", 16)),
+            "epochs": params.get("epochs", config.get("epochs", 80)),
+            "mean_loss": mean_loss,
+            "std_loss": std_loss,
+            "embedded_score": candidate_score,
+            "parameter_count": parameter_count,
+            "estimated_int8_tflite_bytes": size_estimate,
+            "fits_parameter_limit": feasibility["fits_parameter_limit"],
+            "fits_tflite_size_limit": feasibility["fits_tflite_size_limit"],
+            "repeat_losses": ";".join(f"{loss:.6f}" for loss in losses),
+        }
+        candidate_rows.append(row)
+        if best is None or candidate_score > best["embedded_score"]:
+            best = {"params": params, "loss": mean_loss, "loss_std": std_loss, "embedded_score": candidate_score, "feasibility": feasibility}
+        elapsed = time.perf_counter() - started
+        print(
+            f"{name}: candidate {candidate_index}/{len(candidates)} done "
+            f"mse={mean_loss:.6f} std={std_loss:.6f} embedded={candidate_score:.3f} "
+            f"params={parameter_count} elapsed={elapsed:.1f}s",
+            flush=True,
         )
-        recon = model.predict(x_eval, verbose=0)
-        loss = float(np.mean((x_eval - recon) ** 2))
-        if best is None or loss < best["loss"]:
-            best = {"params": params, "loss": loss}
+
+    artifact_dir = resolve_repo_path(config["artifact_dir"])
+    write_csv(artifact_dir / "hyperparameter_candidates.csv", candidate_rows)
+    write_csv(
+        ROOT / f"ai_ml/models/{name}_hyperparameter_candidates.csv",
+        candidate_rows,
+    )
+    write_json(
+        artifact_dir / "recommended_config_patch.json",
+        {
+            "config_path": str(config_path.relative_to(ROOT)),
+            "recommended_fields": {
+                "hidden_layers": best["params"].get("hidden_layers", config.get("hidden_layers", [16, 8, 16])),
+                "learning_rate": float(best["params"].get("learning_rate", config.get("learning_rate", 0.001))),
+                "batch_size": int(best["params"].get("batch_size", config.get("batch_size", 16))),
+                "epochs": int(best["params"].get("epochs", config.get("epochs", 80))),
+            },
+        },
+    )
 
     result = {
         "model_name": name,
@@ -176,11 +370,16 @@ def tune_anomaly(name: str, entry: Dict, defaults: Dict) -> Tuple[str, Dict]:
         "config": str(config_path.relative_to(ROOT)),
         "feature_columns": feature_columns,
         "candidate_count": len(candidates),
+        "repeats": repeats,
         "best_params": best["params"],
         "best_score": best["loss"],
+        "best_score_std": best["loss_std"],
+        "best_embedded_score": best["embedded_score"],
+        "esp32_feasibility": best["feasibility"],
         "score_metric": "validation_reconstruction_mse" if not val_split.empty else "test_reconstruction_mse",
+        "candidate_csv": str((artifact_dir / "hyperparameter_candidates.csv").relative_to(ROOT)),
     }
-    write_json(resolve_repo_path(config["artifact_dir"]) / "hyperparameter_tuning_results.json", result)
+    write_json(artifact_dir / "hyperparameter_tuning_results.json", result)
     return name, result
 
 
@@ -188,6 +387,8 @@ def main() -> int:
     parser = argparse.ArgumentParser(description="Tune TensorFlow/Keras Porter Doctor models.")
     parser.add_argument("--config", default=DEFAULT_TUNING_CONFIG, type=Path)
     parser.add_argument("--model", action="append", help="Tune only this model name. Can be repeated.")
+    parser.add_argument("--max-combinations", type=int, help="Override YAML max_combinations for quick smoke tests.")
+    parser.add_argument("--repeats", type=int, help="Override YAML repeats for quick smoke tests.")
     args = parser.parse_args()
 
     require_tensorflow_deps()
@@ -196,13 +397,19 @@ def main() -> int:
     results = []
 
     for name, entry in selected_items(tuning.get("classifier_models", {}), args.model):
-        tuned_name, result = tune_classifier(name, entry, defaults)
-        print(f"{tuned_name}: best={result['best_params']} score={result['best_score']:.3f}")
+        tuned_name, result = tune_classifier(name, entry, defaults, args.max_combinations, args.repeats)
+        print(
+            f"{tuned_name}: best={result['best_params']} "
+            f"score={result['best_score']:.3f} embedded={result['best_embedded_score']:.3f}"
+        )
         results.append(result)
 
     for name, entry in selected_items(tuning.get("anomaly_models", {}), args.model):
-        tuned_name, result = tune_anomaly(name, entry, defaults)
-        print(f"{tuned_name}: best={result['best_params']} mse={result['best_score']:.6f}")
+        tuned_name, result = tune_anomaly(name, entry, defaults, args.max_combinations, args.repeats)
+        print(
+            f"{tuned_name}: best={result['best_params']} "
+            f"mse={result['best_score']:.6f} embedded={result['best_embedded_score']:.3f}"
+        )
         results.append(result)
 
     if args.model and not results:
