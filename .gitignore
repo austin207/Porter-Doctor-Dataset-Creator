@@ -1,0 +1,21 @@
+# Zephyr/west workspace state
+.west/
+zephyr/
+modules/
+bootloader/
+tools/
+
+# Build outputs
+build/
+build-*/
+out/
+
+# Python/cache noise
+__pycache__/
+*.pyc
+
+# Editor/OS noise
+.vscode/
+.idea/
+Thumbs.db
+Desktop.ini

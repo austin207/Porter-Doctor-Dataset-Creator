@@ -1,0 +1,8 @@
+﻿/* STM32 Nucleo F401RE overlay placeholder. */
+/* Fill I2C, SPI and SD card nodes after STM32 pin selection. */
+
+/ {
+    aliases {
+        /* power-sensor = &ina226; */
+    };
+};
