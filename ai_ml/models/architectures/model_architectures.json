@@ -1,9 +1,9 @@
 {
   "note": "Generated-style architecture source of truth is ai_ml/models/architectures/model_architectures.py. Run it with --summary to regenerate a full JSON summary.",
   "embedded_core": {
-    "anomaly_detector": "tiny_autoencoder or one-class model",
-    "router": "small MLP, Dense 16, Dense 8, softmax over experts",
-    "experts": "small MLP, Dense 16, Dense 8, softmax over fault classes"
+    "anomaly_detector": "tiny autoencoder over combined subsystem summary features",
+    "router": "small MLP, Dense 32, Dense 16, softmax over power/motor/driver/esp32/lighting/unknown routes",
+    "experts": "small MLP over sliding-window features, generally Dense 32 and Dense 16 with fault and action heads"
   },
   "pi_analyzer": {
     "sequence_embedding": "temporal autoencoder candidate",

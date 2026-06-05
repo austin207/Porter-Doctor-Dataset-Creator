@@ -32,6 +32,10 @@ Porter Doctor/
     dataset_tools/
     models/
     router_dataset_builder/
+    training/
+
+  docs/
+    MODEL_ARCHITECTURE.md
 
   zephyr/
   modules/
@@ -41,9 +45,13 @@ Porter Doctor/
 
 `data_collectors/` contains Zephyr firmware and hardware configuration.
 
-`ai_ml/` contains sample datasets, merge tools, and router dataset tooling.
-It also contains baseline model training code. These are offline Python models,
-not embedded ESP32 inference artifacts.
+`ai_ml/` contains sample datasets, merge tools, router dataset tooling, baseline
+model code, and future training/export scaffolds. These are offline Python
+models and planning files, not embedded ESP32 inference artifacts.
+
+`docs/MODEL_ARCHITECTURE.md` captures the current model architecture plan:
+feature windows, compact MLP shapes, router behavior, anomaly handling, and
+export artifact expectations.
 
 `zephyr/`, `modules/`, `bootloader/`, and `tools/` are downloaded by `west` and
 are ignored by git.

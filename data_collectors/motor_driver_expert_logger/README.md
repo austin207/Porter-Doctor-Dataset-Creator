@@ -83,6 +83,40 @@ The ESP32 overlay includes SD-card SPI wiring and commented aliases for:
 
 Enable those aliases only after final safe pin choices are known.
 
+## Future Model Architecture
+
+This logger feeds the future Motor Driver Expert model. Firmware inference is
+not implemented here yet.
+
+Initial feature windows should include PWM means, driver temperature mean/max and
+rise rate, fault/enable GPIO ratios, current mean and peak, battery voltage
+mean/min/drop, current-to-PWM ratios, fault pin transition count, and telemetry
+valid ratio.
+
+Recommended embedded model:
+
+```text
+Input: 20 to 28 window features
+Dense 32, ReLU
+Dense 16, ReLU
+Fault head: 6 classes
+Action head: 7 bounded actions
+```
+
+Expected action mapping starts with:
+
+```text
+healthy -> ACTION_NONE
+driver_overcurrent -> ACTION_CONTROLLED_STOP or ACTION_REQUEST_ESTOP
+driver_overtemperature -> ACTION_CONTROLLED_STOP
+driver_disabled -> ACTION_ENTER_SAFE_STATE
+driver_fault_pin_active -> ACTION_ENTER_SAFE_STATE
+undervoltage_lockout -> ACTION_ENTER_SAFE_STATE
+```
+
+`ACTION_REQUEST_ESTOP` is only a model request. Actual emergency stop must be
+authorized by deterministic current, temperature, heartbeat, or fault-pin rules.
+
 ## Safe Collection Notes
 
 - Do not short motor phases.

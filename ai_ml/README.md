@@ -9,6 +9,7 @@ This folder contains:
   dataset_tools/
   models/
   router_dataset_builder/
+  training/
 ```
 
 No embedded ML inference is implemented here yet. Current tooling is focused on:
@@ -17,6 +18,7 @@ No embedded ML inference is implemented here yet. Current tooling is focused on:
 - merging raw run CSV files
 - building the first rule-based MoE router dataset
 - baseline training code for anomaly, router, and subsystem expert models
+- model architecture planning and placeholder training/export pipelines
 
 Merge all raw run files:
 
@@ -41,4 +43,12 @@ Train one model:
 ```powershell
 python ai_ml/models/power_expert/train.py
 python ai_ml/models/anomaly_detector/train.py
+```
+
+Architecture planning:
+
+```text
+docs/MODEL_ARCHITECTURE.md
+ai_ml/models/architectures/
+ai_ml/training/
 ```

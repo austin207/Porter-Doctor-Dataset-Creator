@@ -112,6 +112,36 @@ datasets/
     metadata/
     features/
 
+## Future Model Architecture
+
+This logger feeds the future Power Expert model. Firmware inference is not
+implemented here yet.
+
+Initial feature windows should include voltage/current/power means, peaks,
+standard deviations, voltage drop, voltage drop rate, current rise rate, power
+rise rate, regulator rail summaries, and voltage-current correlation.
+
+Recommended embedded model:
+
+```text
+Input: 18 to 24 window features
+Dense 32, ReLU
+Dense 16, ReLU
+Fault head: 6 classes
+Action head: 7 bounded actions
+```
+
+Expected action mapping starts with:
+
+```text
+healthy -> ACTION_NONE
+battery_voltage_sag -> ACTION_LIMIT_SPEED or ACTION_CONTROLLED_STOP
+battery_undervoltage -> ACTION_ENTER_SAFE_STATE
+loose_power_connection -> ACTION_ENTER_SAFE_STATE
+regulator_instability -> ACTION_CONTROLLED_STOP
+excessive_system_load -> ACTION_LIMIT_SPEED
+```
+
 ## Rules
 
 1. Collect healthy data first.

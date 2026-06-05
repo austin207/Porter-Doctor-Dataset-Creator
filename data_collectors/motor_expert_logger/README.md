@@ -86,6 +86,37 @@ The ESP32 overlay includes SD-card SPI wiring and commented aliases for:
 
 Enable those aliases only after final pin choices are known.
 
+## Future Model Architecture
+
+This logger feeds the future Motor Expert model. Firmware inference is not
+implemented here yet.
+
+Initial feature windows should include PWM/RPM means, RPM standard deviations,
+RPM error mean and peak, encoder deltas, current mean and peak, left-right RPM
+and current mismatch, vibration RMS/peak/variance, motor temperature summaries,
+temperature rise rate, and telemetry valid ratio.
+
+Recommended embedded model:
+
+```text
+Input: 24 to 32 window features
+Dense 32, ReLU
+Dense 16, ReLU
+Fault head: 6 classes
+Action head: 7 bounded actions
+```
+
+Expected action mapping starts with:
+
+```text
+healthy -> ACTION_NONE
+motor_stall -> ACTION_CONTROLLED_STOP or ACTION_ENTER_SAFE_STATE
+excessive_load -> ACTION_LIMIT_SPEED
+motor_disconnected -> ACTION_ENTER_SAFE_STATE
+abnormal_vibration -> ACTION_WARN_OPERATOR or ACTION_LIMIT_SPEED
+bearing_degradation -> ACTION_WARN_OPERATOR
+```
+
 ## Safe Collection Notes
 
 - Collect healthy data first.

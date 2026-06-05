@@ -59,11 +59,11 @@
     "hidden_layers": [
       {
         "activation": "relu",
-        "units": 16
+        "units": 32
       },
       {
         "activation": "relu",
-        "units": 8
+        "units": 16
       }
     ],
     "input_dim": 15,
@@ -88,9 +88,9 @@
     "model_family": "small_mlp",
     "name": "encoder_expert",
     "notes": [
-      "PRD suggested expert model: input 10-25 features, Dense 16, Dense 8, output fault classes.",
-      "Can be replaced by decision tree or random forest converted to C if validation favours it.",
-      "ML output may request bounded actions only; deterministic safety supervisor authorizes actions."
+      "Embedded target architecture is a compact MLP over sliding-window features.",
+      "Training should include a fault head and action head; deployment may use fault logits plus an action lookup table.",
+      "ML output may request bounded actions only; deterministic safety supervisor authorizes critical actions."
     ],
     "output_activation": "softmax",
     "output_classes": [
@@ -110,35 +110,41 @@
     "hidden_layers": [
       {
         "activation": "relu",
-        "units": 16
+        "units": 24
       },
       {
         "activation": "relu",
-        "units": 8
+        "units": 12
       }
     ],
-    "input_dim": 12,
+    "input_dim": 18,
     "input_features": [
-      "heartbeat_interval_ms",
-      "heartbeat_jitter_ms",
+      "heartbeat_interval_mean",
+      "heartbeat_interval_max",
+      "heartbeat_interval_std",
       "heartbeat_missed_count",
-      "reset_reason_id",
-      "watchdog_count",
-      "packet_error_count",
+      "reset_reason_encoded",
+      "watchdog_count_delta",
+      "packet_error_count_delta",
       "packet_loss_rate",
       "task_loop_time_mean_ms",
-      "task_loop_time_peak_ms",
-      "control_loop_jitter_ms",
-      "uart_rx_errors",
-      "telemetry_age_ms"
+      "task_loop_time_max_ms",
+      "task_loop_time_std_ms",
+      "control_loop_jitter_mean",
+      "control_loop_jitter_max",
+      "uart_rx_error_delta",
+      "telemetry_age_mean",
+      "telemetry_age_max",
+      "telemetry_valid_ratio",
+      "stale_window_flag"
     ],
     "max_latency_ms": 50,
     "model_family": "small_mlp",
     "name": "esp32_expert",
     "notes": [
-      "PRD suggested expert model: input 10-25 features, Dense 16, Dense 8, output fault classes.",
-      "Can be replaced by decision tree or random forest converted to C if validation favours it.",
-      "ML output may request bounded actions only; deterministic safety supervisor authorizes actions."
+      "Embedded target architecture is a compact MLP over sliding-window features.",
+      "Training should include a fault head and action head; deployment may use fault logits plus an action lookup table.",
+      "ML output may request bounded actions only; deterministic safety supervisor authorizes critical actions."
     ],
     "output_activation": "softmax",
     "output_classes": [
@@ -148,11 +154,9 @@
       "watchdog_reset",
       "brownout_reset",
       "task_overrun",
-      "firmware_freeze",
-      "communication_failure",
-      "repeated_reset_loop"
+      "firmware_freeze"
     ],
-    "output_dim": 9,
+    "output_dim": 7,
     "purpose": "Diagnose main ESP32 firmware, reset, heartbeat, task timing, and communication faults.",
     "quantization": "int8_candidate"
   },
@@ -168,40 +172,44 @@
         "units": 8
       }
     ],
-    "input_dim": 11,
+    "input_dim": 17,
     "input_features": [
       "brightness_command_mean",
+      "brightness_command_max",
       "light_current_mean",
       "light_current_peak",
+      "light_current_std",
       "light_voltage_mean",
-      "light_voltage_minimum",
+      "light_voltage_min",
+      "light_voltage_std",
       "light_sensor_lux_mean",
-      "brightness_error",
+      "light_sensor_lux_std",
+      "brightness_lux_error",
+      "current_to_brightness_ratio",
+      "voltage_current_ratio",
       "light_driver_temp_mean",
       "light_driver_temp_rise_rate",
-      "light_fault_gpio",
-      "telemetry_age_ms"
+      "light_fault_gpio_ratio",
+      "telemetry_valid_ratio"
     ],
     "max_latency_ms": 50,
     "model_family": "small_mlp",
     "name": "lighting_expert",
     "notes": [
-      "PRD suggested expert model: input 10-25 features, Dense 16, Dense 8, output fault classes.",
-      "Can be replaced by decision tree or random forest converted to C if validation favours it.",
-      "ML output may request bounded actions only; deterministic safety supervisor authorizes actions."
+      "Embedded target architecture is a compact MLP over sliding-window features.",
+      "Training should include a fault head and action head; deployment may use fault logits plus an action lookup table.",
+      "ML output may request bounded actions only; deterministic safety supervisor authorizes critical actions."
     ],
     "output_activation": "softmax",
     "output_classes": [
       "healthy",
-      "led_failure",
-      "light_driver_failure",
-      "open_circuit_wiring_fault",
-      "short_circuit_suspected",
+      "led_disconnected",
       "brightness_mismatch",
+      "light_driver_fault",
       "lighting_overcurrent",
-      "overtemperature"
+      "lighting_short_suspected"
     ],
-    "output_dim": 8,
+    "output_dim": 6,
     "purpose": "Diagnose LED, wiring, driver, short/open circuit, brightness mismatch, and thermal faults.",
     "quantization": "int8_candidate"
   },
@@ -210,54 +218,57 @@
     "hidden_layers": [
       {
         "activation": "relu",
-        "units": 16
+        "units": 32
       },
       {
         "activation": "relu",
-        "units": 8
+        "units": 16
       }
     ],
-    "input_dim": 18,
+    "input_dim": 23,
     "input_features": [
       "pwm_left_mean",
       "pwm_right_mean",
+      "driver_temp_left_mean",
+      "driver_temp_right_mean",
+      "driver_temp_left_max",
+      "driver_temp_right_max",
+      "driver_temp_left_rise_rate",
+      "driver_temp_right_rise_rate",
+      "driver_fault_left_ratio",
+      "driver_fault_right_ratio",
+      "driver_enable_left_ratio",
+      "driver_enable_right_ratio",
       "current_left_mean",
       "current_right_mean",
       "current_left_peak",
       "current_right_peak",
       "battery_voltage_mean",
-      "battery_voltage_minimum",
-      "driver_temp_left_mean",
-      "driver_temp_right_mean",
-      "driver_temp_rise_rate_left",
-      "driver_temp_rise_rate_right",
-      "driver_fault_left",
-      "driver_fault_right",
-      "driver_enable_left",
-      "driver_enable_right",
-      "rpm_response_left",
-      "rpm_response_right"
+      "battery_voltage_min",
+      "battery_voltage_drop",
+      "current_to_pwm_ratio_left",
+      "current_to_pwm_ratio_right",
+      "fault_pin_transition_count",
+      "telemetry_valid_ratio"
     ],
     "max_latency_ms": 50,
     "model_family": "small_mlp",
     "name": "motor_driver_expert",
     "notes": [
-      "PRD suggested expert model: input 10-25 features, Dense 16, Dense 8, output fault classes.",
-      "Can be replaced by decision tree or random forest converted to C if validation favours it.",
-      "ML output may request bounded actions only; deterministic safety supervisor authorizes actions."
+      "Embedded target architecture is a compact MLP over sliding-window features.",
+      "Training should include a fault head and action head; deployment may use fault logits plus an action lookup table.",
+      "ML output may request bounded actions only; deterministic safety supervisor authorizes critical actions."
     ],
     "output_activation": "softmax",
     "output_classes": [
       "healthy",
       "driver_overcurrent",
       "driver_overtemperature",
-      "driver_output_failure",
-      "partial_power_stage_failure",
       "driver_disabled",
-      "undervoltage_lockout",
-      "short_circuit_suspected"
+      "driver_fault_pin_active",
+      "undervoltage_lockout"
     ],
-    "output_dim": 8,
+    "output_dim": 6,
     "purpose": "Diagnose motor-driver power stage, thermal, enable, and undervoltage faults.",
     "quantization": "int8_candidate"
   },
@@ -266,55 +277,59 @@
     "hidden_layers": [
       {
         "activation": "relu",
-        "units": 16
+        "units": 32
       },
       {
         "activation": "relu",
-        "units": 8
+        "units": 16
       }
     ],
-    "input_dim": 19,
+    "input_dim": 25,
     "input_features": [
       "pwm_left_mean",
       "pwm_right_mean",
       "rpm_left_mean",
       "rpm_right_mean",
-      "rpm_error_left",
-      "rpm_error_right",
-      "rpm_variance_left",
-      "rpm_variance_right",
+      "rpm_left_std",
+      "rpm_right_std",
+      "rpm_error_left_mean",
+      "rpm_error_right_mean",
+      "rpm_error_left_peak",
+      "rpm_error_right_peak",
+      "encoder_delta_left_mean",
+      "encoder_delta_right_mean",
       "current_left_mean",
       "current_right_mean",
       "current_left_peak",
       "current_right_peak",
-      "motor_temp_left_mean",
-      "motor_temp_right_mean",
-      "vibration_rms",
-      "vibration_peak",
       "left_right_rpm_difference",
       "left_right_current_difference",
-      "telemetry_age_ms"
+      "vibration_rms_mean",
+      "vibration_peak_max",
+      "vibration_variance",
+      "motor_temp_left_mean",
+      "motor_temp_right_mean",
+      "motor_temp_rise_rate",
+      "telemetry_valid_ratio"
     ],
     "max_latency_ms": 50,
     "model_family": "small_mlp",
     "name": "motor_expert",
     "notes": [
-      "PRD suggested expert model: input 10-25 features, Dense 16, Dense 8, output fault classes.",
-      "Can be replaced by decision tree or random forest converted to C if validation favours it.",
-      "ML output may request bounded actions only; deterministic safety supervisor authorizes actions."
+      "Embedded target architecture is a compact MLP over sliding-window features.",
+      "Training should include a fault head and action head; deployment may use fault logits plus an action lookup table.",
+      "ML output may request bounded actions only; deterministic safety supervisor authorizes critical actions."
     ],
     "output_activation": "softmax",
     "output_classes": [
       "healthy",
-      "mechanical_stall",
+      "motor_stall",
       "excessive_load",
       "motor_disconnected",
       "abnormal_vibration",
-      "bearing_degradation",
-      "reduced_motor_efficiency",
-      "imbalance"
+      "bearing_degradation"
     ],
-    "output_dim": 8,
+    "output_dim": 6,
     "purpose": "Diagnose mechanical motor-side faults from PWM, RPM, current, temperature, load, and vibration.",
     "quantization": "int8_candidate"
   },
@@ -323,11 +338,11 @@
     "hidden_layers": [
       {
         "activation": "relu",
-        "units": 16
+        "units": 32
       },
       {
         "activation": "relu",
-        "units": 8
+        "units": 16
       }
     ],
     "input_dim": 12,
@@ -349,9 +364,9 @@
     "model_family": "small_mlp",
     "name": "pi_expert",
     "notes": [
-      "PRD suggested expert model: input 10-25 features, Dense 16, Dense 8, output fault classes.",
-      "Can be replaced by decision tree or random forest converted to C if validation favours it.",
-      "ML output may request bounded actions only; deterministic safety supervisor authorizes actions."
+      "Embedded target architecture is a compact MLP over sliding-window features.",
+      "Training should include a fault head and action head; deployment may use fault logits plus an action lookup table.",
+      "ML output may request bounded actions only; deterministic safety supervisor authorizes critical actions."
     ],
     "output_activation": "softmax",
     "output_classes": [
@@ -373,35 +388,42 @@
     "hidden_layers": [
       {
         "activation": "relu",
-        "units": 16
+        "units": 32
       },
       {
         "activation": "relu",
-        "units": 8
+        "units": 16
       }
     ],
-    "input_dim": 12,
+    "input_dim": 19,
     "input_features": [
       "battery_voltage_mean",
-      "battery_voltage_minimum",
+      "battery_voltage_min",
+      "battery_voltage_std",
       "battery_voltage_drop",
       "battery_current_mean",
       "battery_current_peak",
-      "battery_current_variance",
+      "battery_current_std",
       "battery_power_mean",
+      "battery_power_peak",
       "rail_5v_mean",
+      "rail_5v_min",
+      "rail_5v_std",
       "rail_3v3_mean",
-      "load_state",
-      "temperature_mean",
-      "voltage_sag_duration_ms"
+      "rail_3v3_min",
+      "rail_3v3_std",
+      "voltage_current_correlation",
+      "voltage_drop_rate",
+      "current_rise_rate",
+      "power_rise_rate"
     ],
     "max_latency_ms": 50,
     "model_family": "small_mlp",
     "name": "power_expert",
     "notes": [
-      "PRD suggested expert model: input 10-25 features, Dense 16, Dense 8, output fault classes.",
-      "Can be replaced by decision tree or random forest converted to C if validation favours it.",
-      "ML output may request bounded actions only; deterministic safety supervisor authorizes actions."
+      "Embedded target architecture is a compact MLP over sliding-window features.",
+      "Training should include a fault head and action head; deployment may use fault logits plus an action lookup table.",
+      "ML output may request bounded actions only; deterministic safety supervisor authorizes critical actions."
     ],
     "output_activation": "softmax",
     "output_classes": [
@@ -410,10 +432,9 @@
       "battery_undervoltage",
       "loose_power_connection",
       "regulator_instability",
-      "excessive_system_load",
-      "power_interruption"
+      "excessive_system_load"
     ],
-    "output_dim": 7,
+    "output_dim": 6,
     "purpose": "Diagnose battery, voltage sag, undervoltage, loose connection, regulator, and load faults.",
     "quantization": "int8_candidate"
   },
@@ -422,39 +443,40 @@
     "hidden_layers": [
       {
         "activation": "relu",
-        "units": 16
+        "units": 32
       },
       {
         "activation": "relu",
-        "units": 8
+        "units": 16
       }
     ],
-    "input_dim": 16,
+    "input_dim": 17,
     "input_features": [
-      "power_score",
-      "motor_score",
-      "driver_score",
-      "esp32_score",
-      "lighting_score",
-      "rpm_error_left",
-      "rpm_error_right",
-      "voltage_drop",
-      "current_peak_left",
-      "current_peak_right",
-      "heartbeat_interval_ms",
-      "packet_loss_rate",
-      "driver_fault_count",
-      "light_fault_gpio",
-      "telemetry_stale_ratio",
-      "severity"
+      "power_voltage_drop",
+      "power_current_peak",
+      "power_regulator_instability_score",
+      "motor_rpm_error_peak",
+      "motor_vibration_score",
+      "motor_current_response_score",
+      "driver_temp_rise_rate",
+      "driver_fault_pin_ratio",
+      "driver_current_to_pwm_score",
+      "esp32_heartbeat_age",
+      "esp32_packet_error_rate",
+      "esp32_task_timing_score",
+      "lighting_brightness_error",
+      "lighting_current_peak",
+      "lighting_fault_pin_ratio",
+      "telemetry_valid_ratio",
+      "operating_mode_encoded"
     ],
     "max_latency_ms": 50,
     "model_family": "small_mlp",
     "name": "moe_router",
     "notes": [
-      "PRD suggested router model: input 30-50 features, Dense 16, Dense 8, output expert probabilities.",
-      "Current initial feature list is smaller because only first logger features exist.",
-      "Runtime must activate top-2 or top-3 experts, not only top-1."
+      "Router chooses experts only; it does not make the final fault decision.",
+      "Runtime must activate top-2 experts by default and top-3 when uncertainty or risk is high.",
+      "Later versions can add encoder_expert and pi_expert routes after those datasets exist."
     ],
     "output_activation": "softmax",
     "output_classes": [
@@ -462,11 +484,10 @@
       "motor_expert",
       "motor_driver_expert",
       "esp32_expert",
-      "encoder_expert",
       "lighting_expert",
       "unknown_fault"
     ],
-    "output_dim": 7,
+    "output_dim": 6,
     "purpose": "Route each telemetry window to top-2 or top-3 subsystem experts.",
     "quantization": "int8_candidate"
   },

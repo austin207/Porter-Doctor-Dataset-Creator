@@ -74,6 +74,42 @@ The ESP32 overlay includes SD-card SPI wiring and a commented alias for:
 
 Enable the alias only after final UART pins are known.
 
+## Future Model Architecture
+
+This logger feeds the future ESP32 Expert model. Firmware inference is not
+implemented here yet.
+
+Initial feature windows should include heartbeat interval mean/max/std, missed
+heartbeat count, encoded reset reason, watchdog and packet-error deltas, packet
+error rate, task loop timing mean/max/std, control-loop jitter mean/max, UART RX
+error delta, telemetry age mean/max, telemetry valid ratio, and stale-window
+flag.
+
+Recommended embedded model:
+
+```text
+Input: 16 to 24 window features
+Dense 24, ReLU
+Dense 12, ReLU
+Fault head: 7 classes
+Action head: 7 bounded actions
+```
+
+Expected action mapping starts with:
+
+```text
+healthy -> ACTION_NONE
+heartbeat_lost -> ACTION_ENTER_SAFE_STATE or ACTION_REQUEST_ESTOP
+packet_loss -> ACTION_WARN_OPERATOR
+watchdog_reset -> ACTION_ENTER_SAFE_STATE
+brownout_reset -> ACTION_ENTER_SAFE_STATE
+task_overrun -> ACTION_WARN_OPERATOR or ACTION_LIMIT_SPEED
+firmware_freeze -> ACTION_ENTER_SAFE_STATE or ACTION_REQUEST_ESTOP
+```
+
+If main-controller heartbeat is lost while motors are enabled, deterministic
+safety supervisor logic should stop the robot.
+
 ## Safe Fault Injection Examples
 
 - Stop the heartbeat task in test firmware.

@@ -82,6 +82,37 @@ The ESP32 overlay includes SD-card SPI wiring and commented aliases for:
 
 Enable those aliases only after final safe pin choices are known.
 
+## Future Model Architecture
+
+This logger feeds the future Lighting Expert model. Firmware inference is not
+implemented here yet.
+
+Initial feature windows should include brightness command mean/max, light
+current mean/peak/std, light voltage mean/min/std, lux mean/std, brightness-lux
+error, current-to-brightness ratio, voltage-current ratio, driver temperature
+mean and rise rate, light fault GPIO ratio, and telemetry valid ratio.
+
+Recommended embedded model:
+
+```text
+Input: 16 to 20 window features
+Dense 16, ReLU
+Dense 8, ReLU
+Fault head: 6 classes
+Action head: 7 bounded actions
+```
+
+Expected action mapping starts with:
+
+```text
+healthy -> ACTION_NONE
+led_disconnected -> ACTION_WARN_OPERATOR
+brightness_mismatch -> ACTION_WARN_OPERATOR
+light_driver_fault -> ACTION_CONTROLLED_STOP or ACTION_ENTER_SAFE_STATE
+lighting_overcurrent -> ACTION_ENTER_SAFE_STATE
+lighting_short_suspected -> ACTION_ENTER_SAFE_STATE
+```
+
 ## Safe Collection Notes
 
 - Disconnect LEDs only when powered off.
