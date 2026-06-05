@@ -1,0 +1,19 @@
+{
+  "model_name": "power_expert",
+  "purpose": "Classify power-system faults from battery voltage, current, and power telemetry.",
+  "input_csvs": [
+    "ai_ml/datasets/power_expert/raw/healthy_run_001.csv"
+  ],
+  "artifact_dir": "ai_ml/models/power_expert/artifacts",
+  "label_column": "fault_label",
+  "feature_columns": [
+    "fault_active",
+    "severity",
+    "battery_voltage_v",
+    "battery_current_a",
+    "battery_power_w"
+  ],
+  "n_estimators": 100,
+  "max_depth": 8,
+  "random_state": 7
+}

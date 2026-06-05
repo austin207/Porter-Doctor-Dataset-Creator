@@ -1,0 +1,4 @@
+timestamp_ms,elapsed_s,run_id,robot_id,expert_name,fault_active,fault_label,fault_subsystem,severity,pwm_left,pwm_right,driver_temp_left_c,driver_temp_right_c,driver_fault_left,driver_fault_right,driver_enable_left,driver_enable_right,current_left_a,current_right_a,battery_voltage_v,telemetry_valid,telemetry_age_ms
+1000,0.000,healthy_run_001,porter_dev,motor_driver_expert,0,healthy,motor_driver,0,120,120,-1.000000,-1.000000,0,0,1,1,1.120000,1.100000,12.600000,1,18
+1100,0.100,healthy_run_001,porter_dev,motor_driver_expert,0,healthy,motor_driver,0,122,122,-1.000000,-1.000000,0,0,1,1,1.150000,1.130000,12.590000,1,22
+1200,0.200,healthy_run_001,porter_dev,motor_driver_expert,0,healthy,motor_driver,0,121,121,-1.000000,-1.000000,0,0,1,1,1.140000,1.120000,12.580000,1,25

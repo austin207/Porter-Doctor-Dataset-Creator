@@ -1,0 +1,46 @@
+{
+  "labels": {
+    "power_expert": [
+      "healthy",
+      "battery_voltage_sag",
+      "battery_undervoltage",
+      "loose_power_connection",
+      "regulator_instability",
+      "excessive_system_load"
+    ],
+    "motor_expert": [
+      "motor_stall",
+      "excessive_load",
+      "motor_disconnected",
+      "abnormal_vibration",
+      "bearing_degradation"
+    ],
+    "motor_driver_expert": [
+      "driver_overcurrent",
+      "driver_overtemperature",
+      "driver_disabled",
+      "driver_fault_pin_active",
+      "undervoltage_lockout"
+    ],
+    "esp32_expert": [
+      "heartbeat_lost",
+      "packet_loss",
+      "watchdog_reset",
+      "brownout_reset",
+      "task_overrun",
+      "firmware_freeze"
+    ],
+    "lighting_expert": [
+      "led_disconnected",
+      "brightness_mismatch",
+      "light_driver_fault",
+      "lighting_overcurrent",
+      "lighting_short_suspected"
+    ],
+    "unknown_fault": [
+      "unknown",
+      "unknown_fault",
+      "anomaly"
+    ]
+  }
+}

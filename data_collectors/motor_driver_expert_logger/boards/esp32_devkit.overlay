@@ -1,0 +1,48 @@
+/* ESP32 DevKit overlay for Motor Driver Expert Logger. */
+/* SD: SCK GPIO18, MISO GPIO19, MOSI GPIO23, CS GPIO25. */
+/* Enable optional driver aliases only after final safe pin mapping is selected. */
+
+#include <zephyr/dt-bindings/pinctrl/esp32-pinctrl.h>
+
+&pinctrl {
+    driver_spim2_default: driver_spim2_default {
+        group1 {
+            pinmux = <SPIM2_MISO_GPIO19>,
+                     <SPIM2_MOSI_GPIO23>,
+                     <SPIM2_SCLK_GPIO18>,
+                     <SPIM2_CSEL_GPIO25>;
+        };
+    };
+};
+
+&spi2 {
+    status = "okay";
+    cs-gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+    pinctrl-0 = <&driver_spim2_default>;
+    pinctrl-names = "default";
+
+    sdhc0: sdhc@0 {
+        compatible = "zephyr,sdhc-spi-slot";
+        reg = <0>;
+        status = "okay";
+        spi-max-frequency = <8000000>;
+
+        mmc {
+            compatible = "zephyr,sdmmc-disk";
+            disk-name = "SD";
+            status = "okay";
+        };
+    };
+};
+
+/ {
+    aliases {
+        /* driver-fault-left-gpio = &driver_fault_left_node; */
+        /* driver-fault-right-gpio = &driver_fault_right_node; */
+        /* driver-enable-left-gpio = &driver_enable_left_node; */
+        /* driver-enable-right-gpio = &driver_enable_right_node; */
+        /* driver-temp-left-adc = &driver_temp_left_adc; */
+        /* driver-temp-right-adc = &driver_temp_right_adc; */
+        /* driver-tel-uart = &uart1; */
+    };
+};

@@ -1,0 +1,45 @@
+/* ESP32 DevKit overlay for Motor Expert Logger. */
+/* SD: SCK GPIO18, MISO GPIO19, MOSI GPIO23, CS GPIO25. */
+/* Enable motor-tel-uart after choosing UART pins for the main controller link. */
+
+#include <zephyr/dt-bindings/pinctrl/esp32-pinctrl.h>
+
+&pinctrl {
+    motor_spim2_default: motor_spim2_default {
+        group1 {
+            pinmux = <SPIM2_MISO_GPIO19>,
+                     <SPIM2_MOSI_GPIO23>,
+                     <SPIM2_SCLK_GPIO18>,
+                     <SPIM2_CSEL_GPIO25>;
+        };
+    };
+};
+
+&spi2 {
+    status = "okay";
+    cs-gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+    pinctrl-0 = <&motor_spim2_default>;
+    pinctrl-names = "default";
+
+    sdhc0: sdhc@0 {
+        compatible = "zephyr,sdhc-spi-slot";
+        reg = <0>;
+        status = "okay";
+        spi-max-frequency = <8000000>;
+
+        mmc {
+            compatible = "zephyr,sdmmc-disk";
+            disk-name = "SD";
+            status = "okay";
+        };
+    };
+};
+
+/ {
+    aliases {
+        /* motor-tel-uart = &uart1; */
+        /* vibration-sensor = &imu0; */
+        /* left-current-sensor = &left_current_sensor; */
+        /* right-current-sensor = &right_current_sensor; */
+    };
+};

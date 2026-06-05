@@ -1,0 +1,8 @@
+run_id=healthy_run_001
+robot_id=porter_dev
+expert_name=esp32_expert
+fault_label=healthy
+fault_subsystem=esp32_controller
+severity=0
+sample_period_ms=100
+telemetry_stale_ms=500

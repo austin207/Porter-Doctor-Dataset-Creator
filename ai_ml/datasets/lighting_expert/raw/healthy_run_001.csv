@@ -1,0 +1,4 @@
+timestamp_ms,elapsed_s,run_id,robot_id,expert_name,fault_active,fault_label,fault_subsystem,severity,brightness_command,light_current_a,light_voltage_v,light_sensor_lux,light_driver_temp_c,light_fault_gpio,telemetry_valid,telemetry_age_ms
+1000,0.000,healthy_run_001,porter_dev,lighting_expert,0,healthy,lighting,0,180,0.420000,12.100000,620.000000,37.500000,0,1,12
+1100,0.100,healthy_run_001,porter_dev,lighting_expert,0,healthy,lighting,0,180,0.430000,12.080000,625.000000,37.600000,0,1,15
+1200,0.200,healthy_run_001,porter_dev,lighting_expert,0,healthy,lighting,0,180,0.420000,12.090000,622.000000,37.700000,0,1,16

@@ -1,0 +1,7 @@
+run_id=healthy_run_001
+robot_id=porter_dev
+expert_name=power_expert
+fault_label=healthy
+fault_subsystem=power
+severity=0
+sample_period_ms=100

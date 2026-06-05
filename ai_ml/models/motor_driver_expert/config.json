@@ -1,0 +1,29 @@
+{
+  "model_name": "motor_driver_expert",
+  "purpose": "Classify motor-driver stage faults and unsafe driver behavior.",
+  "input_csvs": [
+    "ai_ml/datasets/motor_driver_expert/raw/healthy_run_001.csv"
+  ],
+  "artifact_dir": "ai_ml/models/motor_driver_expert/artifacts",
+  "label_column": "fault_label",
+  "feature_columns": [
+    "fault_active",
+    "severity",
+    "pwm_left",
+    "pwm_right",
+    "driver_temp_left_c",
+    "driver_temp_right_c",
+    "driver_fault_left",
+    "driver_fault_right",
+    "driver_enable_left",
+    "driver_enable_right",
+    "current_left_a",
+    "current_right_a",
+    "battery_voltage_v",
+    "telemetry_valid",
+    "telemetry_age_ms"
+  ],
+  "n_estimators": 100,
+  "max_depth": 8,
+  "random_state": 7
+}

@@ -1,0 +1,47 @@
+/* ESP32 DevKit overlay for Lighting Expert Logger. */
+/* SD: SCK GPIO18, MISO GPIO19, MOSI GPIO23, CS GPIO25. */
+/* Enable optional lighting aliases only after final safe pin mapping is selected. */
+
+#include <zephyr/dt-bindings/pinctrl/esp32-pinctrl.h>
+
+&pinctrl {
+    lighting_spim2_default: lighting_spim2_default {
+        group1 {
+            pinmux = <SPIM2_MISO_GPIO19>,
+                     <SPIM2_MOSI_GPIO23>,
+                     <SPIM2_SCLK_GPIO18>,
+                     <SPIM2_CSEL_GPIO25>;
+        };
+    };
+};
+
+&spi2 {
+    status = "okay";
+    cs-gpios = <&gpio0 25 GPIO_ACTIVE_LOW>;
+    pinctrl-0 = <&lighting_spim2_default>;
+    pinctrl-names = "default";
+
+    sdhc0: sdhc@0 {
+        compatible = "zephyr,sdhc-spi-slot";
+        reg = <0>;
+        status = "okay";
+        spi-max-frequency = <8000000>;
+
+        mmc {
+            compatible = "zephyr,sdmmc-disk";
+            disk-name = "SD";
+            status = "okay";
+        };
+    };
+};
+
+/ {
+    aliases {
+        /* light-current-sensor = &light_current_sensor; */
+        /* light-voltage-adc = &light_voltage_adc; */
+        /* light-sensor = &light_sensor; */
+        /* light-driver-temp-adc = &light_driver_temp_adc; */
+        /* light-fault-gpio = &light_fault_node; */
+        /* lighting-tel-uart = &uart1; */
+    };
+};

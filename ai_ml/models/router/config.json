@@ -1,0 +1,20 @@
+{
+  "model_name": "moe_router",
+  "purpose": "Route a telemetry window to the top subsystem experts.",
+  "input_csvs": [
+    "ai_ml/router_dataset_builder/output/router_dataset.csv"
+  ],
+  "artifact_dir": "ai_ml/models/router/artifacts",
+  "label_column": "target_expert",
+  "feature_columns": [
+    "power_score",
+    "motor_score",
+    "driver_score",
+    "esp32_score",
+    "lighting_score",
+    "severity"
+  ],
+  "n_estimators": 100,
+  "max_depth": 6,
+  "random_state": 7
+}

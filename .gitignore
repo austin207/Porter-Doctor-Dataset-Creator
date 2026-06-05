@@ -9,6 +9,8 @@ tools/
 build/
 build-*/
 out/
+**/boards/generated.overlay
+**/artifacts/
 
 # Python/cache noise
 __pycache__/

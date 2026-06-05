@@ -1,0 +1,4 @@
+timestamp_ms,elapsed_s,run_id,robot_id,expert_name,fault_active,fault_label,fault_subsystem,severity,heartbeat_counter,heartbeat_interval_ms,reset_reason,watchdog_count,packet_error_count,task_loop_time_ms,control_loop_jitter_ms,uart_rx_errors,telemetry_valid,telemetry_age_ms
+1000,0.000,healthy_run_001,porter_dev,esp32_expert,0,healthy,esp32_controller,0,50,-1,power_on,0,0,11,1,0,1,15
+1100,0.100,healthy_run_001,porter_dev,esp32_expert,0,healthy,esp32_controller,0,51,100,power_on,0,0,12,2,0,1,18
+1200,0.200,healthy_run_001,porter_dev,esp32_expert,0,healthy,esp32_controller,0,52,100,power_on,0,0,11,1,0,1,20

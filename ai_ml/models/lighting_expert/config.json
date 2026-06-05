@@ -1,0 +1,24 @@
+{
+  "model_name": "lighting_expert",
+  "purpose": "Classify lighting-system LED, driver, wiring, and brightness faults.",
+  "input_csvs": [
+    "ai_ml/datasets/lighting_expert/raw/healthy_run_001.csv"
+  ],
+  "artifact_dir": "ai_ml/models/lighting_expert/artifacts",
+  "label_column": "fault_label",
+  "feature_columns": [
+    "fault_active",
+    "severity",
+    "brightness_command",
+    "light_current_a",
+    "light_voltage_v",
+    "light_sensor_lux",
+    "light_driver_temp_c",
+    "light_fault_gpio",
+    "telemetry_valid",
+    "telemetry_age_ms"
+  ],
+  "n_estimators": 100,
+  "max_depth": 8,
+  "random_state": 7
+}

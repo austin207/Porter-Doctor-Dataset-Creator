@@ -1,0 +1,23 @@
+{
+  "model_name": "encoder_expert",
+  "purpose": "Placeholder for future encoder pulse, direction, and signal-noise fault classification.",
+  "input_csvs": [],
+  "artifact_dir": "ai_ml/models/encoder_expert/artifacts",
+  "label_column": "fault_label",
+  "feature_columns": [
+    "pwm_left",
+    "pwm_right",
+    "rpm_left",
+    "rpm_right",
+    "encoder_count_left",
+    "encoder_count_right",
+    "current_left_a",
+    "current_right_a",
+    "vibration_rms",
+    "telemetry_valid",
+    "telemetry_age_ms"
+  ],
+  "n_estimators": 100,
+  "max_depth": 8,
+  "random_state": 7
+}

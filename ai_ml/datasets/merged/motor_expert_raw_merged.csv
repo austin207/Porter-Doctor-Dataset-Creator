@@ -1,0 +1,4 @@
+timestamp_ms,elapsed_s,run_id,robot_id,expert_name,fault_active,fault_label,fault_subsystem,severity,pwm_left,pwm_right,rpm_left,rpm_right,encoder_count_left,encoder_count_right,current_left_a,current_right_a,vibration_rms,vibration_peak,motor_temp_left_c,motor_temp_right_c,telemetry_valid,telemetry_age_ms,source_file
+1000,0.000,healthy_run_001,porter_dev,motor_expert,0,healthy,motor,0,120,120,84,83,10240,10210,1.120000,1.100000,-1.000000,-1.000000,-1.000000,-1.000000,1,20,datasets/motor_expert/raw/healthy_run_001.csv
+1100,0.100,healthy_run_001,porter_dev,motor_expert,0,healthy,motor,0,122,122,86,85,10282,10252,1.150000,1.130000,-1.000000,-1.000000,-1.000000,-1.000000,1,25,datasets/motor_expert/raw/healthy_run_001.csv
+1200,0.200,healthy_run_001,porter_dev,motor_expert,0,healthy,motor,0,121,121,85,84,10324,10294,1.140000,1.120000,-1.000000,-1.000000,-1.000000,-1.000000,1,30,datasets/motor_expert/raw/healthy_run_001.csv

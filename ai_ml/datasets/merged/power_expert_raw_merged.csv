@@ -1,0 +1,4 @@
+timestamp_ms,elapsed_s,run_id,robot_id,expert_name,fault_active,fault_label,fault_subsystem,severity,battery_voltage_v,battery_current_a,battery_power_w,source_file
+1000,0.000,healthy_run_001,porter_dev,power_expert,0,healthy,power,0,12.610000,0.820000,10.340200,datasets/power_expert/raw/healthy_run_001.csv
+1100,0.100,healthy_run_001,porter_dev,power_expert,0,healthy,power,0,12.600000,0.850000,10.710000,datasets/power_expert/raw/healthy_run_001.csv
+1200,0.200,healthy_run_001,porter_dev,power_expert,0,healthy,power,0,12.590000,0.840000,10.575600,datasets/power_expert/raw/healthy_run_001.csv

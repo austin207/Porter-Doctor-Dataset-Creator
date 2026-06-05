@@ -1,0 +1,25 @@
+{
+  "model_name": "esp32_expert",
+  "purpose": "Classify main-controller heartbeat, reset, watchdog, and communication faults.",
+  "input_csvs": [
+    "ai_ml/datasets/esp32_expert/raw/healthy_run_001.csv"
+  ],
+  "artifact_dir": "ai_ml/models/esp32_expert/artifacts",
+  "label_column": "fault_label",
+  "feature_columns": [
+    "fault_active",
+    "severity",
+    "heartbeat_counter",
+    "heartbeat_interval_ms",
+    "watchdog_count",
+    "packet_error_count",
+    "task_loop_time_ms",
+    "control_loop_jitter_ms",
+    "uart_rx_errors",
+    "telemetry_valid",
+    "telemetry_age_ms"
+  ],
+  "n_estimators": 100,
+  "max_depth": 8,
+  "random_state": 7
+}

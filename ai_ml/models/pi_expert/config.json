@@ -1,0 +1,20 @@
+{
+  "model_name": "pi_expert",
+  "purpose": "Placeholder for future Raspberry Pi or Jetson health fault classification.",
+  "input_csvs": [],
+  "artifact_dir": "ai_ml/models/pi_expert/artifacts",
+  "label_column": "fault_label",
+  "feature_columns": [
+    "pi_heartbeat",
+    "cpu_usage",
+    "memory_usage",
+    "cpu_temperature",
+    "disk_usage",
+    "process_alive",
+    "ros_node_status",
+    "command_latency_ms"
+  ],
+  "n_estimators": 100,
+  "max_depth": 8,
+  "random_state": 7
+}

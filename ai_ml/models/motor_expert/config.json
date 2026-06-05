@@ -1,0 +1,30 @@
+{
+  "model_name": "motor_expert",
+  "purpose": "Classify motor-side mechanical and electrical behavior faults.",
+  "input_csvs": [
+    "ai_ml/datasets/motor_expert/raw/healthy_run_001.csv"
+  ],
+  "artifact_dir": "ai_ml/models/motor_expert/artifacts",
+  "label_column": "fault_label",
+  "feature_columns": [
+    "fault_active",
+    "severity",
+    "pwm_left",
+    "pwm_right",
+    "rpm_left",
+    "rpm_right",
+    "encoder_count_left",
+    "encoder_count_right",
+    "current_left_a",
+    "current_right_a",
+    "vibration_rms",
+    "vibration_peak",
+    "motor_temp_left_c",
+    "motor_temp_right_c",
+    "telemetry_valid",
+    "telemetry_age_ms"
+  ],
+  "n_estimators": 100,
+  "max_depth": 8,
+  "random_state": 7
+}

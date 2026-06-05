@@ -1,0 +1,14 @@
+{
+  "model_name": "always_on_anomaly_detector",
+  "purpose": "Detect abnormal behavior from merged numeric telemetry before expert confidence is considered.",
+  "input_csvs": [
+    "ai_ml/datasets/merged/all_experts_raw_merged.csv"
+  ],
+  "artifact_dir": "ai_ml/models/anomaly_detector/artifacts",
+  "label_column": "fault_label",
+  "healthy_label": "healthy",
+  "feature_columns": [],
+  "n_estimators": 100,
+  "contamination": 0.05,
+  "random_state": 7
+}

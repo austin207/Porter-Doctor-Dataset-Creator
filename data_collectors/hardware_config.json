@@ -1,0 +1,89 @@
+{
+  "active_board": "esp32_devkitc_procpu",
+  "boards": {
+    "esp32_devkitc_procpu": {
+      "zephyr_board": "esp32_devkitc/esp32/procpu",
+      "mcu": "esp32",
+      "gpio_controller": "gpio0",
+      "sd_card": {
+        "enabled": true,
+        "spi_node": "spi2",
+        "spi_instance": 2,
+        "sck_gpio": 18,
+        "miso_gpio": 19,
+        "mosi_gpio": 23,
+        "cs_gpio": 25,
+        "max_frequency_hz": 8000000,
+        "disk_name": "SD"
+      },
+      "i2c": {
+        "i2c0": {
+          "enabled": true,
+          "instance": 0,
+          "node": "i2c0",
+          "sda_gpio": 21,
+          "scl_gpio": 22,
+          "clock_frequency": "I2C_BITRATE_FAST"
+        }
+      },
+      "uarts": {
+        "uart1": {
+          "enabled": false,
+          "instance": 1,
+          "node": "uart1",
+          "tx_gpio": 17,
+          "rx_gpio": 16,
+          "baudrate": 115200
+        }
+      },
+      "experts": {
+        "power": {
+          "ina226": {
+            "enabled": true,
+            "i2c_bus": "i2c0",
+            "address": "0x40",
+            "shunt_resistor_micro_ohms": 100000,
+            "alias": "power-sensor"
+          }
+        },
+        "motor": {
+          "telemetry_uart": {
+            "enabled": false,
+            "uart": "uart1",
+            "alias": "motor-tel-uart"
+          }
+        },
+        "motor_driver": {
+          "telemetry_uart": {
+            "enabled": false,
+            "uart": "uart1",
+            "alias": "driver-tel-uart"
+          },
+          "gpios": {
+            "driver-fault-left-gpio": { "enabled": false, "gpio": 32, "active": "low" },
+            "driver-fault-right-gpio": { "enabled": false, "gpio": 33, "active": "low" },
+            "driver-enable-left-gpio": { "enabled": false, "gpio": 26, "active": "high" },
+            "driver-enable-right-gpio": { "enabled": false, "gpio": 27, "active": "high" }
+          }
+        },
+        "esp32": {
+          "telemetry_uart": {
+            "enabled": false,
+            "uart": "uart1",
+            "alias": "esp32-health-uart"
+          }
+        },
+        "lighting": {
+          "telemetry_uart": {
+            "enabled": false,
+            "uart": "uart1",
+            "alias": "lighting-tel-uart"
+          },
+          "gpios": {
+            "light-fault-gpio": { "enabled": false, "gpio": 32, "active": "low" }
+          }
+        }
+      }
+    }
+  }
+}
