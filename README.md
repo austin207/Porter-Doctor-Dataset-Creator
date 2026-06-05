@@ -85,46 +85,80 @@ $env:PYTHONPATH="$env:APPDATA\Python\Python312\site-packages"
 west update
 ```
 
-## Firmware Logger Builds
+## Firmware Builds
 
-Build each logger:
+### Windows one-time setup
+
+The project path contains `(` from `VirtusCo (Startup)`. On Windows this
+breaks the Ninja linker command line, so two things must be set up once per
+machine before any firmware build:
+
+**1. Copy ESP32 ROM linker scripts to `C:\zld\`**
+
+```powershell
+New-Item -ItemType Directory -Force C:\zld
+$src = "modules\hal\espressif\zephyr\esp32\blobs\linker\esp32\"
+Copy-Item "$src\esp32.rom.alias.ld"        C:\zld\
+Copy-Item "$src\esp32.rom.ld"              C:\zld\
+Copy-Item "$src\esp32.rom.api.ld"          C:\zld\
+Copy-Item "$src\esp32.rom.libgcc.ld"       C:\zld\
+Copy-Item "$src\esp32.rom.newlib-data.ld"  C:\zld\
+Copy-Item "$src\esp32.rom.newlib-funcs.ld" C:\zld\
+Copy-Item "$src\esp32.peripherals.ld"      C:\zld\
+```
+
+Re-copy if the Espressif HAL is upgraded. All build outputs go to `C:\b\`
+for the same reason.
+
+### Build everything
+
+Build the inference smoke app and all five data-collector loggers:
+
+```powershell
+.\build_firmware.ps1
+```
+
+Build everything from scratch (deletes existing build dirs first):
+
+```powershell
+.\build_firmware.ps1 -Rebuild
+```
+
+Build then flash each image one at a time (prompts between each):
+
+```powershell
+.\build_firmware.ps1 -Flash
+```
+
+Clean rebuild and flash:
+
+```powershell
+.\build_firmware.ps1 -Rebuild -Flash
+```
+
+Build outputs go to `C:\b\<target>`:
+
+```text
+C:\b\smoke
+C:\b\power_expert_logger
+C:\b\motor_expert_logger
+C:\b\motor_driver_expert_logger
+C:\b\esp32_expert_logger
+C:\b\lighting_expert_logger
+```
+
+### Build a single logger
 
 ```powershell
 .\data_collectors\build_logger.ps1 -Expert power_expert_logger
-.\data_collectors\build_logger.ps1 -Expert motor_expert_logger
-.\data_collectors\build_logger.ps1 -Expert motor_driver_expert_logger
-.\data_collectors\build_logger.ps1 -Expert esp32_expert_logger
-.\data_collectors\build_logger.ps1 -Expert lighting_expert_logger
-```
-
-Build and flash each logger:
-
-```powershell
 .\data_collectors\build_logger.ps1 -Expert power_expert_logger -Flash
-.\data_collectors\build_logger.ps1 -Expert motor_expert_logger -Flash
-.\data_collectors\build_logger.ps1 -Expert motor_driver_expert_logger -Flash
-.\data_collectors\build_logger.ps1 -Expert esp32_expert_logger -Flash
-.\data_collectors\build_logger.ps1 -Expert lighting_expert_logger -Flash
 ```
 
-Direct `west build` examples:
+### Direct west commands
 
 ```powershell
-west build -b esp32_devkitc/esp32/procpu data_collectors/power_expert_logger -d build/power_expert_logger
-west build -b esp32_devkitc/esp32/procpu data_collectors/motor_expert_logger -d build/motor_expert_logger
-west build -b esp32_devkitc/esp32/procpu data_collectors/motor_driver_expert_logger -d build/motor_driver_expert_logger
-west build -b esp32_devkitc/esp32/procpu data_collectors/esp32_expert_logger -d build/esp32_expert_logger
-west build -b esp32_devkitc/esp32/procpu data_collectors/lighting_expert_logger -d build/lighting_expert_logger
-```
-
-Direct flash examples:
-
-```powershell
-west flash -d build/power_expert_logger
-west flash -d build/motor_expert_logger
-west flash -d build/motor_driver_expert_logger
-west flash -d build/esp32_expert_logger
-west flash -d build/lighting_expert_logger
+west build -b esp32_devkitc/esp32/procpu data_collectors/power_expert_logger -d C:\b\power_expert_logger
+west flash -d C:\b\power_expert_logger
 ```
 
 Logger board and pin settings live in:
@@ -484,13 +518,13 @@ Build the Zephyr inference smoke app. Run the export command first so
 
 ```powershell
 .\.venv\Scripts\python.exe ai_ml\models\export_zephyr_inference.py
-west build -b esp32_devkitc/esp32/procpu zephyr_inference/smoke_app -d build/zephyr_inference_smoke
+west build -b esp32_devkitc/esp32/procpu zephyr_inference/smoke_app -d C:\b\smoke
 ```
 
 Flash the smoke app:
 
 ```powershell
-west flash -d build/zephyr_inference_smoke
+west flash -d C:\b\smoke
 ```
 
 The smoke app compiles all generated model C arrays and metadata into a Zephyr
@@ -533,15 +567,15 @@ Firmware logger smoke flow:
 west update
 west zephyr-export
 python -m pip install -r zephyr\scripts\requirements.txt
-.\data_collectors\build_logger.ps1 -Expert power_expert_logger
+.\build_firmware.ps1
 ```
 
 Zephyr inference smoke flow:
 
 ```powershell
 .\.venv\Scripts\python.exe ai_ml\models\export_zephyr_inference.py
-west build -b esp32_devkitc/esp32/procpu zephyr_inference/smoke_app -d build/zephyr_inference_smoke
-west flash -d build/zephyr_inference_smoke
+west build -b esp32_devkitc/esp32/procpu zephyr_inference/smoke_app -d C:\b\smoke
+west flash -d C:\b\smoke
 ```
 
 ## Validation Commands For Development

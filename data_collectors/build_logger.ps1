@@ -20,7 +20,9 @@ if (-not $board) {
 
 $zephyrBoard = $board.zephyr_board
 $appPath = "data_collectors/$Expert"
-$buildDir = "build/$Expert"
+# Build output goes to C:\b\ to avoid the Ninja cmd.exe parser breaking on
+# '(' in the project path ("VirtusCo (Startup)") during the link step.
+$buildDir = "C:\b\$Expert"
 
 Write-Host "Expert: $Expert"
 Write-Host "Hardware config: $activeBoard"

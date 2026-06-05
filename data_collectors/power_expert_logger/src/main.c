@@ -1,6 +1,5 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/sensor.h>
-#include <zephyr/fs/fat_fs.h>
 #include <zephyr/fs/fs.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
@@ -454,7 +453,7 @@ static void logger_thread(void)
 	}
 }
 
-K_THREAD_DEFINE(logger_tid, 4096, logger_thread, NULL, NULL, NULL, 5, 0, K_FOREVER);
+K_THREAD_DEFINE(logger_tid, 4096, logger_thread, NULL, NULL, NULL, 5, 0, 0);
 
 int main(void)
 {
@@ -478,6 +477,5 @@ int main(void)
 		LOG_ERR("Logger running without SD storage. Fix SD wiring/config and reboot.");
 	}
 
-	k_thread_start(logger_tid);
 	return 0;
 }

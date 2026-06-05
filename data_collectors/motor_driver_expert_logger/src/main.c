@@ -233,7 +233,7 @@ static void logger_thread(void)
 	}
 }
 
-K_THREAD_DEFINE(logger_tid, 4096, logger_thread, NULL, NULL, NULL, 5, 0, K_FOREVER);
+K_THREAD_DEFINE(logger_tid, 4096, logger_thread, NULL, NULL, NULL, 5, 0, 0);
 
 int main(void)
 {
@@ -264,6 +264,5 @@ int main(void)
 		LOG_WRN("No driver-tel-uart alias is enabled; UART telemetry will remain invalid");
 	}
 
-	k_thread_start(logger_tid);
 	return 0;
 }

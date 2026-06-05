@@ -42,7 +42,8 @@
             "enabled": true,
             "i2c_bus": "i2c0",
             "address": "0x40",
-            "shunt_resistor_micro_ohms": 100000,
+            "rshunt_micro_ohms": 100000,
+            "current_lsb_microamps": 500,
             "alias": "power-sensor"
           }
         },
